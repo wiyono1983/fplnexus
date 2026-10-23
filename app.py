@@ -198,6 +198,7 @@ menu = st.sidebar.radio(
         "Transfer Trends",
         "IDX Nexus",
         "Yahoo Finance Tester"
+        "MyPorto"
     ]
 )
 
@@ -3211,3 +3212,279 @@ elif menu == "Yahoo Finance Tester":
                 f"Error: {e}"
             )
 
+elif menu == "MyPorto":
+
+   
+
+    st.title("📁 My Stock Portfolio")
+
+    if "portfolio" not in st.session_state:
+
+        st.session_state.portfolio = []
+
+    st.subheader(
+        "➕ Add Stock"
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        ticker = st.text_input(
+            "Ticker",
+            placeholder="BBCA"
+        )
+
+    with col2:
+
+        lot = st.number_input(
+            "Lot",
+            min_value=1,
+            value=100
+        )
+
+    with col3:
+
+        avg_price = st.number_input(
+            "Average Buy",
+            min_value=1.0,
+            value=1000.0
+        )
+
+    if st.button(
+        "Add Position"
+    ):
+
+        if ticker:
+
+            ticker = (
+                ticker.upper()
+                .replace(".JK","")
+            )
+
+            exists = any(
+                p["Ticker"] == ticker
+                for p in st.session_state.portfolio
+            )
+
+            if not exists:
+
+                st.session_state.portfolio.append(
+                    {
+                        "Ticker": ticker,
+                        "Lot": lot,
+                        "Avg Buy": avg_price
+                    }
+                )
+
+                st.success(
+                    f"{ticker} added"
+                )
+
+    st.divider()
+
+    st.subheader(
+        "📊 Portfolio"
+    )
+
+    rows = []
+
+    total_cost = 0
+    total_value = 0
+
+    for position in st.session_state.portfolio:
+
+        try:
+
+            yf_ticker = (
+                position["Ticker"]
+                + ".JK"
+            )
+
+            stock = yf.Ticker(
+                yf_ticker
+            )
+
+            info = stock.info
+
+            current_price = (
+                info.get(
+                    "currentPrice"
+                ) or 0
+            )
+
+            shares = (
+                position["Lot"]
+                * 100
+            )
+
+            cost_value = (
+                position["Avg Buy"]
+                * shares
+            )
+
+            market_value = (
+                current_price
+                * shares
+            )
+
+            pnl = (
+                market_value
+                - cost_value
+            )
+
+            pnl_pct = 0
+
+            if cost_value:
+
+                pnl_pct = round(
+                    (
+                        pnl
+                        / cost_value
+                    )
+                    * 100,
+                    2
+                )
+
+            total_cost += cost_value
+            total_value += market_value
+
+            rows.append(
+                {
+                    "Ticker":
+                    position["Ticker"],
+
+                    "Lot":
+                    position["Lot"],
+
+                    "Avg Buy":
+                    position["Avg Buy"],
+
+                    "Current":
+                    current_price,
+
+                    "Cost":
+                    round(
+                        cost_value
+                    ),
+
+                    "Market Value":
+                    round(
+                        market_value
+                    ),
+
+                    "P/L":
+                    round(
+                        pnl
+                    ),
+
+                    "P/L %":
+                    pnl_pct
+                }
+            )
+
+        except:
+            pass
+
+    portfolio_df = pd.DataFrame(
+        rows
+    )
+
+    if not portfolio_df.empty:
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            st.metric(
+                "Positions",
+                len(
+                    portfolio_df
+                )
+            )
+
+        with col2:
+
+            st.metric(
+                "Portfolio Value",
+                f"{total_value:,.0f}"
+            )
+
+        with col3:
+
+            st.metric(
+                "Total P/L",
+                f"{(total_value-total_cost):,.0f}"
+            )
+
+        st.dataframe(
+            portfolio_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        st.subheader(
+            "❌ Delete Position"
+        )
+
+        delete_ticker = st.selectbox(
+            "Select Stock",
+            portfolio_df[
+                "Ticker"
+            ]
+        )
+
+        if st.button(
+            "Delete Stock"
+        ):
+
+            st.session_state.portfolio = [
+                p
+                for p
+                in st.session_state.portfolio
+                if p["Ticker"]
+                != delete_ticker
+            ]
+
+            st.rerun()
+
+        st.divider()
+
+        gainers = portfolio_df.sort_values(
+            "P/L %",
+            ascending=False
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.subheader(
+                "🚀 Top Winner"
+            )
+
+            st.dataframe(
+                gainers.head(5),
+                hide_index=True,
+                use_container_width=True
+            )
+
+        with col2:
+
+            st.subheader(
+                "📉 Top Loser"
+            )
+
+            st.dataframe(
+                gainers.tail(5),
+                hide_index=True,
+                use_container_width=True
+            )
+
+    else:
+
+        st.info(
+            "No stocks added yet."
+        )
