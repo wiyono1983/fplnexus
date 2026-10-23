@@ -519,19 +519,19 @@ if entry_id:
 
             col1, col2, col3 = st.columns(3)
 
-              with col1:
+            with col1:
                  st.metric(
                    "🏆 Team",
                    team_name
                  )
 
-              with col2:
+            with col2:
                  st.metric(
                    "👤 Manager",
                    manager_name
                  )
 
-              with col3:
+            with col3:
                 st.metric(
                   "🆔 Team ID",
                   entry_id
