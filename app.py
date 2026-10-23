@@ -2775,7 +2775,7 @@ elif menu == "Yahoo Finance Tester":
             for field in fields:
 
                 
-            )
+            
 
         except Exception as e:
 
