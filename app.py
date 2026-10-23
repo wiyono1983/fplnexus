@@ -584,33 +584,33 @@ elif menu == "My Team":
 
             if compare_1 != compare_2:
 
-              p1 = squad_df[
-                squad_df["Player"] == compare_1
-              ].iloc[0]
+               p1 = squad_df[
+                 squad_df["Player"] == compare_1
+               ].iloc[0]
  
-              p2 = squad_df[
-                squad_df["Player"] == compare_2
-              ].iloc[0]
+               p2 = squad_df[
+                 squad_df["Player"] == compare_2
+               ].iloc[0]
 
-           compare_df = pd.DataFrame(
-            [
-              {
-                "Metric": "Price",
-                compare_1: p1["Price"],
-                compare_2: p2["Price"]
-              },
-             {
-                "Metric": "Points",
-                compare_1: p1["Points"],
-                compare_2: p2["Points"]
-             },
-             {
-                "Metric": "Form",
-                compare_1: p1["Form"],
-                compare_2: p2["Form"]
-             }
-           ]
-        )
+               compare_df = pd.DataFrame(
+               [
+                {
+                  "Metric": "Price",
+                  compare_1: p1["Price"],
+                  compare_2: p2["Price"]
+                },
+                {
+                  "Metric": "Points",
+                  compare_1: p1["Points"],
+                  compare_2: p2["Points"]
+                },
+                {
+                  "Metric": "Form",
+                  compare_1: p1["Form"],
+                  compare_2: p2["Form"]
+                }
+               ]
+          )
 
     st.dataframe(
         compare_df,
