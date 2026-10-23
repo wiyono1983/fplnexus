@@ -3161,15 +3161,14 @@ elif menu == "IDX Nexus":
             
 elif menu == "MyPorto":
 
-    import os
+    
 
     st.title("📁 My Portfolio")
 
     PORTFOLIO_FILE = "portfolio.csv"
 
-    if not os.path.exists(
-        PORTFOLIO_FILE
-    ):
+    # Create file first time
+    if not os.path.exists(PORTFOLIO_FILE):
 
         pd.DataFrame(
             columns=[
@@ -3185,6 +3184,19 @@ elif menu == "MyPorto":
     portfolio_df = pd.read_csv(
         PORTFOLIO_FILE
     )
+
+    # Fix datatypes
+    if not portfolio_df.empty:
+
+        portfolio_df["Lot"] = pd.to_numeric(
+            portfolio_df["Lot"],
+            errors="coerce"
+        ).fillna(0).astype(int)
+
+        portfolio_df["Avg Buy"] = pd.to_numeric(
+            portfolio_df["Avg Buy"],
+            errors="coerce"
+        ).fillna(0).astype(float)
 
     st.subheader(
         "➕ Add / Update Position"
@@ -3211,8 +3223,9 @@ elif menu == "MyPorto":
 
         avg_buy = st.number_input(
             "Buy Price",
-            min_value=1,
-            value=1000
+            min_value=1.0,
+            value=1000.0,
+            step=1.0
         )
 
     if st.button(
@@ -3222,7 +3235,6 @@ elif menu == "MyPorto":
         ticker = (
             ticker.upper()
             .strip()
-            .replace(".JK", "")
         )
 
         if ticker:
@@ -3232,7 +3244,7 @@ elif menu == "MyPorto":
                 == ticker
             ]
 
-            # saham sudah ada
+            # Stock already exists
             if not existing.empty:
 
                 old_lot = int(
@@ -3243,9 +3255,8 @@ elif menu == "MyPorto":
                     existing.iloc[0]["Avg Buy"]
                 )
 
-                new_total_lot = (
-                    old_lot
-                    + lot
+                total_lot = (
+                    old_lot + lot
                 )
 
                 new_avg = (
@@ -3258,21 +3269,25 @@ elif menu == "MyPorto":
                         lot
                         * avg_buy
                     )
-                ) / new_total_lot
+                ) / total_lot
 
                 portfolio_df.loc[
                     portfolio_df["Ticker"]
                     == ticker,
                     "Lot"
-                ] = new_total_lot
+                ] = int(
+                    total_lot
+                )
 
                 portfolio_df.loc[
                     portfolio_df["Ticker"]
                     == ticker,
                     "Avg Buy"
-                ] = round(
-                    new_avg,
-                    2
+                ] = float(
+                    round(
+                        new_avg,
+                        2
+                    )
                 )
 
                 portfolio_df.to_csv(
@@ -3282,15 +3297,12 @@ elif menu == "MyPorto":
 
                 st.success(
                     f"""
-Position Updated
+Updated {ticker}
 
-Ticker :
-{ticker}
+Lot :
+{total_lot}
 
-Total Lot :
-{new_total_lot}
-
-New Avg :
+Average Buy :
 {round(new_avg,2)}
 """
                 )
@@ -3304,10 +3316,10 @@ New Avg :
                             ticker,
 
                             "Lot":
-                            lot,
+                            int(lot),
 
                             "Avg Buy":
-                            avg_buy
+                            float(avg_buy)
                         }
                     ]
                 )
@@ -3344,7 +3356,7 @@ New Avg :
     if portfolio_df.empty:
 
         st.info(
-            "Portfolio kosong."
+            "Portfolio is empty."
         )
 
     else:
@@ -3365,7 +3377,7 @@ New Avg :
         st.divider()
 
         st.subheader(
-            "🗑 Delete Position"
+            "🗑 Delete Stock"
         )
 
         delete_ticker = st.selectbox(
@@ -3373,7 +3385,6 @@ New Avg :
             portfolio_df[
                 "Ticker"
             ]
-            .sort_values()
         )
 
         if st.button(
@@ -3399,10 +3410,11 @@ New Avg :
         st.divider()
 
         st.download_button(
-            label="📥 Download Portfolio",
+            label="📥 Download Portfolio CSV",
             data=portfolio_df.to_csv(
                 index=False
             ),
             file_name="portfolio.csv",
             mime="text/csv"
         )
+                        
