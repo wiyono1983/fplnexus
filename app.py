@@ -3008,15 +3008,15 @@ elif menu == "IDX Nexus":
             st.error(e)
     elif idx_menu == "Value Screener":
 
-    st.subheader(
-        "💰 Value Screener"
-    )
+          st.subheader(
+            "💰 Value Screener"
+          )
 
-    portfolio_df = pd.read_csv(
-        "portfolio.csv"
-    )
+           portfolio_df = pd.read_csv(
+               "portfolio.csv"
+          )
 
-    rows = []
+           rows = []
 
     for _, row in portfolio_df.iterrows():
 
