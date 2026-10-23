@@ -686,40 +686,35 @@ elif menu == "My Team":
                 report = f"""
 ⚽ FPL NEXUS TRANSFER REPORT
 
-                SELL PLAYER
-                ❌ {sell_player}
+   SELL PLAYER
+     ❌ {sell_player}
 
-                Sell Price: £{selected['Price']:.1f}m
-                Current Bank: £{bank:.1f}m
-                Available Budget: £{available_budget:.1f}m
+   Sell Price: £{selected['Price']:.1f}m
+   Current Bank: £{bank:.1f}m
+   Available Budget: £{available_budget:.1f}m
 
-                🏆 POINTS PICK
-                {points_pick['web_name']}
-                {points_pick['total_points']} pts
+   🏆 POINTS PICK
+      {points_pick['web_name']}
+      {points_pick['total_points']} pts
 
-                🔥 FORM PICK
-                {form_pick['web_name']}
-                Form {form_pick['Form']}
+   🔥 FORM PICK
+      {form_pick['web_name']}
+      Form {form_pick['Form']}
 
-                💰 VALUE PICK
-                {value_pick['web_name']}
-                Value {value_pick['Value']}
+   💰 VALUE PICK
+      {value_pick['web_name']}
+      Value {value_pick['Value']}
 
-                🎯 DIFFERENTIAL PICK
-                {diff_pick['web_name']}
-                Ownership {diff_pick['Ownership']}%
+   🎯 DIFFERENTIAL PICK
+      {diff_pick['web_name']}
+      Ownership {diff_pick['Ownership']}%
 
-                ✅ RECOMMENDED TRANSFER
-
-                OUT:
-                {sell_player}
-                IN:
-                {recommended['web_name']}
+ ✅ RECOMMENDED TRANSFER
+    OUT: {sell_player}
+    IN : {recommended['web_name']}
                 
-Buy Price:
-£{recommended['Price']:.1f}m
-Remaining Budget:
-£{remaining_budget:.1f}m
+    Buy Price : £{recommended['Price']:.1f}m
+    Remaining Budget: £{remaining_budget:.1f}m
 """
 
                 st.subheader(
