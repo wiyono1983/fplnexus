@@ -203,8 +203,84 @@ elif menu == "Standings":
             f"Error loading standings: {e}"
         )
 elif menu == "Statistics":
-    st.title("📈 Statistics")
-    st.write("Statistik league.")
+
+    st.title("📈 Player Statistics")
+
+    try:
+
+        bootstrap = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()
+
+        players = pd.DataFrame(
+            bootstrap["elements"]
+        )
+
+        stat_options = {
+            "Goals": "goals_scored",
+            "Assists": "assists",
+            "Clean Sheets": "clean_sheets",
+            "Minutes": "minutes",
+            "Bonus Points": "bonus",
+            "ICT Index": "ict_index",
+            "Influence": "influence",
+            "Creativity": "creativity",
+            "Threat": "threat",
+            "Dream Team": "dreamteam_count",
+            "Yellow Cards": "yellow_cards",
+            "Red Cards": "red_cards",
+            "Saves": "saves"
+        }
+
+        selected_stat = st.selectbox(
+            "Select Statistic",
+            list(stat_options.keys())
+        )
+
+        stat_col = stat_options[
+            selected_stat
+        ]
+
+        stats_df = players[
+            [
+                "web_name",
+                stat_col
+            ]
+        ].copy()
+
+        stats_df.columns = [
+            "Player",
+            selected_stat
+        ]
+
+        stats_df = stats_df.sort_values(
+            selected_stat,
+            ascending=False
+        ).head(20)
+
+        st.subheader(
+            f"Top 20 - {selected_stat}"
+        )
+
+        st.dataframe(
+            stats_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.bar_chart(
+            stats_df.set_index(
+                "Player"
+            )[selected_stat]
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading statistics: {e}"
+        )
+
 elif menu == "Captain Picks":
 
     st.title("🧢 Captain Picks")
