@@ -2699,192 +2699,6 @@ elif menu == "Best XI":
             )             
 
 
-                        
-elif menu == "MyPorto":
-
-    st.title("📁 My Portfolio")
-
-    PORTFOLIO_FILE = "portfolio.csv"
-
-    if not os.path.exists(
-        PORTFOLIO_FILE
-    ):
-
-        pd.DataFrame(
-            columns=[
-                "Ticker",
-                "Lot",
-                "Avg Buy"
-            ]
-        ).to_csv(
-            PORTFOLIO_FILE,
-            index=False
-        )
-
-    portfolio_df = pd.read_csv(
-        PORTFOLIO_FILE
-    )
-
-    st.subheader(
-        "➕ Add Stock"
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-
-        ticker = st.text_input(
-            "Ticker",
-            placeholder="BBCA"
-        )
-
-    with col2:
-
-        lot = st.number_input(
-            "Lot",
-            min_value=1,
-            value=100
-        )
-
-    with col3:
-
-        avg_buy = st.number_input(
-            "Average Buy Price",
-            min_value=1,
-            value=1000
-        )
-
-    if st.button(
-        "Add Stock"
-    ):
-
-        ticker = (
-            ticker.upper()
-            .replace(".JK", "")
-            .strip()
-        )
-
-        if ticker:
-
-            exists = (
-                portfolio_df[
-                    "Ticker"
-                ]
-                .astype(str)
-                .str.upper()
-                .eq(ticker)
-                .any()
-            )
-
-            if exists:
-
-                st.warning(
-                    f"{ticker} already exists."
-                )
-
-            else:
-
-                new_row = pd.DataFrame(
-                    [
-                        {
-                            "Ticker":
-                            ticker,
-
-                            "Lot":
-                            lot,
-
-                            "Avg Buy":
-                            avg_buy
-                        }
-                    ]
-                )
-
-                portfolio_df = pd.concat(
-                    [
-                        portfolio_df,
-                        new_row
-                    ],
-                    ignore_index=True
-                )
-
-                portfolio_df.to_csv(
-                    PORTFOLIO_FILE,
-                    index=False
-                )
-
-                st.success(
-                    f"{ticker} added."
-                )
-
-                st.rerun()
-
-    st.divider()
-
-    st.subheader(
-        "📊 My Holdings"
-    )
-
-    if portfolio_df.empty:
-
-        st.info(
-            "No stock added yet."
-        )
-
-    else:
-
-        st.dataframe(
-            portfolio_df,
-            hide_index=True,
-            use_container_width=True
-        )
-
-        st.divider()
-
-        st.subheader(
-            "🗑 Delete Stock"
-        )
-
-        stock_to_delete = st.selectbox(
-            "Select Ticker",
-            portfolio_df[
-                "Ticker"
-            ]
-        )
-
-        if st.button(
-            "Delete Stock"
-        ):
-
-            portfolio_df = portfolio_df[
-                portfolio_df[
-                    "Ticker"
-                ]
-                != stock_to_delete
-            ]
-
-            portfolio_df.to_csv(
-                PORTFOLIO_FILE,
-                index=False
-            )
-
-            st.success(
-                f"{stock_to_delete} deleted."
-            )
-
-            st.rerun()
-
-        st.divider()
-
-        st.download_button(
-            label="📥 Download Portfolio CSV",
-            data=portfolio_df.to_csv(
-                index=False
-            ),
-            file_name="portfolio.csv",
-            mime="text/csv"
-        )
-
-
 elif menu == "IDX Nexus":
 
 
@@ -3344,3 +3158,193 @@ elif menu == "IDX Nexus":
 
                 st.error(e)
 
+elif menu == "MyPorto":
+
+
+    st.title("📁 My Portfolio")
+
+    PORTFOLIO_FILE = "portfolio.csv"
+
+    if not os.path.exists(
+        PORTFOLIO_FILE
+    ):
+
+        pd.DataFrame(
+            columns=[
+                "Ticker",
+                "Lot",
+                "Avg Buy"
+            ]
+        ).to_csv(
+            PORTFOLIO_FILE,
+            index=False
+        )
+
+    portfolio_df = pd.read_csv(
+        PORTFOLIO_FILE
+    )
+
+    st.subheader(
+        "➕ Add Stock"
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        ticker = st.text_input(
+            "Ticker",
+            placeholder="BBCA"
+        )
+
+    with col2:
+
+        lot = st.number_input(
+            "Lot",
+            min_value=1,
+            value=100
+        )
+
+    with col3:
+
+        avg_buy = st.number_input(
+            "Average Buy",
+            min_value=1,
+            value=1000
+        )
+
+    if st.button(
+        "Add Stock"
+    ):
+
+        ticker = (
+            ticker.upper()
+            .replace(".JK", "")
+            .strip()
+        )
+
+        ticker = (
+            ticker + ".JK"
+        )
+
+        exists = (
+            portfolio_df[
+                "Ticker"
+            ]
+            .astype(str)
+            .str.upper()
+            .eq(ticker)
+            .any()
+        )
+
+        if exists:
+
+            st.warning(
+                f"{ticker} already exists"
+            )
+
+        else:
+
+            new_row = pd.DataFrame(
+                [
+                    {
+                        "Ticker":
+                        ticker,
+
+                        "Lot":
+                        lot,
+
+                        "Avg Buy":
+                        avg_buy
+                    }
+                ]
+            )
+
+            portfolio_df = pd.concat(
+                [
+                    portfolio_df,
+                    new_row
+                ],
+                ignore_index=True
+            )
+
+            portfolio_df.to_csv(
+                PORTFOLIO_FILE,
+                index=False
+            )
+
+            st.success(
+                f"{ticker} added"
+            )
+
+            st.rerun()
+
+    st.divider()
+
+    st.subheader(
+        "📊 Portfolio Holdings"
+    )
+
+    if portfolio_df.empty:
+
+        st.info(
+            "Portfolio is empty"
+        )
+
+    else:
+
+        st.dataframe(
+            portfolio_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.caption(
+            f"{len(portfolio_df)} stocks"
+        )
+
+        st.divider()
+
+        st.subheader(
+            "🗑 Delete Stock"
+        )
+
+        delete_stock = st.selectbox(
+            "Select Stock",
+            portfolio_df[
+                "Ticker"
+            ]
+        )
+
+        if st.button(
+            "Delete Stock"
+        ):
+
+            portfolio_df = portfolio_df[
+                portfolio_df[
+                    "Ticker"
+                ]
+                != delete_stock
+            ]
+
+            portfolio_df.to_csv(
+                PORTFOLIO_FILE,
+                index=False
+            )
+
+            st.success(
+                f"{delete_stock} deleted"
+            )
+
+            st.rerun()
+
+        st.divider()
+
+        st.download_button(
+            "📥 Download Portfolio CSV",
+            data=portfolio_df.to_csv(
+                index=False
+            ),
+            file_name="portfolio.csv",
+            mime="text/csv"
+        )
