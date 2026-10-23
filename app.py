@@ -155,6 +155,131 @@ elif menu == "Statistics":
 elif menu == "Captain Picks":
     st.title("🧢 Captain Picks")
     st.write("Captain terpopuler.")
+    elif menu == "Captain Picks":
+
+    st.title("🧢 Captain Picks")
+
+    LEAGUE_ID = 147447
+
+    try:
+
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        entries = league["standings"]["results"]
+
+        gw = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()["events"]
+
+        current_gw = next(
+            e["id"]
+            for e in gw
+            if e["is_current"]
+        )
+
+        captain_data = []
+
+        progress = st.progress(0)
+
+        for i, manager in enumerate(entries):
+
+            entry_id = manager["entry"]
+
+            picks = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
+                timeout=20
+            ).json()
+
+            captain_pick = next(
+                p for p in picks["picks"]
+                if p["is_captain"]
+            )
+
+            player_id = captain_pick["element"]
+
+            captain_data.append(
+                {
+                    "Manager": manager["player_name"],
+                    "Captain ID": player_id
+                }
+            )
+
+            progress.progress(
+                (i + 1) / len(entries)
+            )
+
+        teams = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()
+
+        players = pd.DataFrame(
+            teams["elements"]
+        )
+
+        player_lookup = dict(
+            zip(
+                players["id"],
+                players["web_name"]
+            )
+        )
+
+        captain_df = pd.DataFrame(
+            captain_data
+        )
+
+        captain_df["Captain"] = (
+            captain_df["Captain ID"]
+            .map(player_lookup)
+        )
+
+        st.subheader(
+            f"Captain Picks - GW {current_gw}"
+        )
+
+        st.dataframe(
+            captain_df[
+                ["Manager", "Captain"]
+            ],
+            use_container_width=True,
+            hide_index=True
+        )
+
+        st.subheader(
+            "Captain Popularity"
+        )
+
+        popularity = (
+            captain_df["Captain"]
+            .value_counts()
+            .reset_index()
+        )
+
+        popularity.columns = [
+            "Player",
+            "Managers"
+        ]
+
+        st.dataframe(
+            popularity,
+            use_container_width=True,
+            hide_index=True
+        )
+
+        st.bar_chart(
+            popularity.set_index(
+                "Player"
+            )["Managers"]
+        )
+
+    except Exception as e:
+
+        st.error(f"Error: {e}")
+
 
 elif menu == "Awards":
     st.title("🏅 Awards")
