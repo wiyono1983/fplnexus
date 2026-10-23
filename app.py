@@ -165,17 +165,10 @@ elif menu == "Captain Picks":
         ).json()
 
         current_gw = next(
-            e["id"]
-            for e in bootstrap["events"]
-            if e["is_current"]
+            event["id"]
+            for event in bootstrap["events"]
+            if event["is_current"]
         )
-
-        league = requests.get(
-            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
-            timeout=20
-        ).json()
-
-        entries = league["standings"]["results"]
 
         players = pd.DataFrame(
             bootstrap["elements"]
@@ -188,6 +181,13 @@ elif menu == "Captain Picks":
             )
         )
 
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        entries = league["standings"]["results"]
+
         captain_data = []
 
         with st.spinner(
@@ -196,57 +196,24 @@ elif menu == "Captain Picks":
 
             for manager in entries:
 
-                entry_id = manager["entry"]
+                try:
 
-                picks = requests.get(
-                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
-                    timeout=20
-                ).json()
+                    entry_id = manager["entry"]
 
-                captain = next(
-                    p
-                    for p in picks["picks"]
-                    if p["is_captain"]
-                )
+                    picks = requests.get(
+                        f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
+                        timeout=20
+                    ).json()
 
-                captain_data.append(
-                    {
-                        "Team": manager["entry_name"],
-                        "Captain": player_lookup.get(
-                            captain["element"],
-                            "Unknown"
-                        ),
-                        "Manager": manager["player_name"]
-                    }
-                )
+                    captain = next(
+                        p
+                        for p in picks["picks"]
+                        if p["is_captain"]
+                    )
 
-        captain_df = pd.DataFrame(
-            captain_data
-        )
+                    captain_data.append(
+                       
 
-        st.subheader(
-            f"Captain Picks GW {current_gw}"
-        )
-
-        st.dataframe(
-            captain_df[
-                [
-                    "Team",
-                    "Captain",
-                    "Manager"
-                ]
-            ],
-            hide_index=True,
-            use_container_width=True
-        )
-
-    except Exception as e:
-
-        st.error(
-            f"Error loading captain picks: {e}"
-        )
-
-            
 elif menu == "Awards":
     st.title("🏅 Awards")
     st.write("Penghargaan liga.")
