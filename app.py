@@ -2697,396 +2697,8 @@ elif menu == "Best XI":
                 f"Error loading squad: {e}"
             )
    
-elif menu == "IDX Nexus":
 
-    
-
-    st.title("📈 IDX NEXUS")
-
-    WATCHLIST = [
-        "IHSG.JK",
-        "FILM.JK",
-        "SOFA.JK",
-        "BUMI.JK",
-        "IRSX.JK",
-        "NCKL.JK",
-        "COCO.JK",
-        "TOBA.JK",
-        "BUVA.JK",
-        "MBMA.JK"
-    ]
-
-    idx_menu = st.radio(
-        "Module",
-        [
-            "Dashboard",
-            "Stock Detail",
-            "Compare Stocks"
-        ],
-        horizontal=True
-    )
-
-    if idx_menu == "Dashboard":
-
-        rows = []
-
-        with st.spinner(
-            "Loading market data..."
-        ):
-
-            for ticker in WATCHLIST:
-
-                try:
-
-                    stock = yf.Ticker(
-                        ticker
-                    )
-
-                    info = stock.info
-
-                    current = info.get(
-                        "currentPrice",
-                        0
-                    )
-
-                    previous = info.get(
-                        "previousClose",
-                        0
-                    )
-
-                    pct_change = 0
-
-                    if previous:
-
-                        pct_change = round(
-                            (
-                                (
-                                    current
-                                    -
-                                    previous
-                                )
-                                /
-                                previous
-                            )
-                            * 100,
-                            2
-                        )
-
-                    rows.append(
-                        {
-                            "Ticker": ticker,
-                            "Price": current,
-                            "Change %": pct_change,
-                            "PE": info.get(
-                                "trailingPE"
-                            ),
-                            "Market Cap": info.get(
-                                "marketCap"
-                            )
-                        }
-                    )
-
-                except:
-                    pass
-
-        market_df = pd.DataFrame(
-            rows
-        )
-
-        if not market_df.empty:
-
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-
-                st.metric(
-                    "Stocks",
-                    len(
-                        market_df
-                    )
-                )
-
-            with col2:
-
-                st.metric(
-                    "Average PE",
-                    round(
-                        market_df[
-                            "PE"
-                        ]
-                        .dropna()
-                        .mean(),
-                        2
-                    )
-                )
-
-            with col3:
-
-                st.metric(
-                    "Highest Price",
-                    round(
-                        market_df[
-                            "Price"
-                        ]
-                        .max(),
-                        2
-                    )
-                )
-
-            st.subheader(
-                "Watchlist Overview"
-            )
-
-            st.dataframe(
-                market_df,
-                hide_index=True,
-                use_container_width=True
-            )
-
-            gainers = market_df.sort_values(
-                "Change %",
-                ascending=False
-            )
-
-            losers = market_df.sort_values(
-                "Change %",
-                ascending=True
-            )
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-
-                st.subheader(
-                    "🚀 Top Gainers"
-                )
-
-                st.dataframe(
-                    gainers.head(5),
-                    hide_index=True,
-                    use_container_width=True
-                )
-
-            with col2:
-
-                st.subheader(
-                    "📉 Top Losers"
-                )
-
-                st.dataframe(
-                    losers.head(5),
-                    hide_index=True,
-                    use_container_width=True
-                )
-
-    elif idx_menu == "Stock Detail":
-
-        ticker = st.selectbox(
-            "Select Stock",
-            WATCHLIST
-        )
-
-        try:
-
-            stock = yf.Ticker(
-                ticker
-            )
-
-            info = stock.info
-
-            history = stock.history(
-                period="1y"
-            )
-
-            col1, col2, col3, col4 = st.columns(4)
-
-            with col1:
-
-                st.metric(
-                    "Price",
-                    info.get(
-                        "currentPrice"
-                    )
-                )
-
-            with col2:
-
-                st.metric(
-                    "PE Ratio",
-                    info.get(
-                        "trailingPE"
-                    )
-                )
-
-            with col3:
-
-                market_cap = info.get(
-                    "marketCap",
-                    0
-                )
-
-                st.metric(
-                    "Market Cap",
-                    f"{market_cap:,.0f}"
-                )
-
-            with col4:
-
-                dividend = info.get(
-                    "dividendYield"
-                )
-
-                if dividend:
-
-                    dividend = round(
-                        dividend * 100,
-                        2
-                    )
-
-                st.metric(
-                    "Dividend %",
-                    dividend
-                )
-
-            st.subheader(
-                "1 Year Price Chart"
-            )
-
-            st.line_chart(
-                history["Close"]
-            )
-
-            st.subheader(
-                "Recent Prices"
-            )
-
-            st.dataframe(
-                history.tail(30),
-                use_container_width=True
-            )
-
-        except Exception as e:
-
-            st.error(
-                f"Error: {e}"
-            )
-
-    elif idx_menu == "Compare Stocks":
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            stock1 = st.selectbox(
-                "Stock 1",
-                WATCHLIST,
-                key="idx_s1"
-            )
-
-        with col2:
-
-            stock2 = st.selectbox(
-                "Stock 2",
-                WATCHLIST,
-                index=1,
-                key="idx_s2"
-            )
-
-        if stock1 != stock2:
-
-            try:
-
-                info1 = yf.Ticker(
-                    stock1
-                ).info
-
-                info2 = yf.Ticker(
-                    stock2
-                ).info
-
-                compare_df = pd.DataFrame(
-                    [
-                        {
-                            "Metric": "Price",
-                            stock1: info1.get(
-                                "currentPrice"
-                            ),
-                            stock2: info2.get(
-                                "currentPrice"
-                            )
-                        },
-                        {
-                            "Metric": "PE Ratio",
-                            stock1: info1.get(
-                                "trailingPE"
-                            ),
-                            stock2: info2.get(
-                                "trailingPE"
-                            )
-                        },
-                        {
-                            "Metric": "Dividend Yield",
-                            stock1: info1.get(
-                                "dividendYield"
-                            ),
-                            stock2: info2.get(
-                                "dividendYield"
-                            )
-                        },
-                        {
-                            "Metric": "Market Cap",
-                            stock1: info1.get(
-                                "marketCap"
-                            ),
-                            stock2: info2.get(
-                                "marketCap"
-                            )
-                        }
-                    ]
-                )
-
-                st.dataframe(
-                    compare_df,
-                    hide_index=True,
-                    use_container_width=True
-                )
-
-                hist1 = yf.Ticker(
-                    stock1
-                ).history(
-                    period="6mo"
-                )
-
-                hist2 = yf.Ticker(
-                    stock2
-                ).history(
-                    period="6mo"
-                )
-
-                chart_df = pd.DataFrame(
-                    {
-                        stock1:
-                        hist1["Close"],
-
-                        stock2:
-                        hist2["Close"]
-                    }
-                )
-
-                st.subheader(
-                    "6 Month Comparison"
-                )
-
-                st.line_chart(
-                    chart_df
-                )
-
-            except Exception as e:
-
-                st.error(
-                    f"Error: {e}"
-                )
-
+                    
 elif menu == "Yahoo Finance Tester":
 
     import yfinance as yf
@@ -3488,3 +3100,234 @@ elif menu == "MyPorto":
         st.info(
             "No stocks added yet."
         )
+
+elif idx_menu == "IDX Nexus":
+
+    import yfinance as yf
+
+    st.subheader(
+        "📊 Portfolio Dashboard"
+    )
+
+    if (
+        "portfolio"
+        not in st.session_state
+        or
+        len(
+            st.session_state.portfolio
+        ) == 0
+    ):
+
+        st.warning(
+            "No portfolio found. Add stocks first."
+        )
+
+    else:
+
+        rows = []
+
+        total_cost = 0
+        total_value = 0
+
+        for position in st.session_state.portfolio:
+
+            try:
+
+                ticker = (
+                    position["Ticker"]
+                    + ".JK"
+                )
+
+                stock = yf.Ticker(
+                    ticker
+                )
+
+                info = stock.info
+
+                current_price = (
+                    info.get(
+                        "currentPrice"
+                    ) or 0
+                )
+
+                shares = (
+                    position["Lot"]
+                    * 100
+                )
+
+                cost_value = (
+                    shares
+                    * position[
+                        "Avg Buy"
+                    ]
+                )
+
+                market_value = (
+                    shares
+                    * current_price
+                )
+
+                pnl = (
+                    market_value
+                    - cost_value
+                )
+
+                pnl_pct = 0
+
+                if cost_value > 0:
+
+                    pnl_pct = round(
+                        (
+                            pnl
+                            /
+                            cost_value
+                        )
+                        * 100,
+                        2
+                    )
+
+                total_cost += cost_value
+                total_value += market_value
+
+                rows.append(
+                    {
+                        "Ticker":
+                        position["Ticker"],
+
+                        "Lot":
+                        position["Lot"],
+
+                        "Avg Buy":
+                        position[
+                            "Avg Buy"
+                        ],
+
+                        "Current":
+                        current_price,
+
+                        "Market Value":
+                        round(
+                            market_value
+                        ),
+
+                        "P/L":
+                        round(
+                            pnl
+                        ),
+
+                        "P/L %":
+                        pnl_pct
+                    }
+                )
+
+            except:
+                pass
+
+        portfolio_df = pd.DataFrame(
+            rows
+        )
+
+        total_pl = (
+            total_value
+            - total_cost
+        )
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+
+            st.metric(
+                "Positions",
+                len(
+                    portfolio_df
+                )
+            )
+
+        with col2:
+
+            st.metric(
+                "Portfolio Value",
+                f"Rp {total_value:,.0f}"
+            )
+
+        with col3:
+
+            st.metric(
+                "Total P/L",
+                f"Rp {total_pl:,.0f}"
+            )
+
+        with col4:
+
+            pct = 0
+
+            if total_cost > 0:
+
+                pct = round(
+                    (
+                        total_pl
+                        /
+                        total_cost
+                    )
+                    * 100,
+                    2
+                )
+
+            st.metric(
+                "Return %",
+                f"{pct}%"
+            )
+
+        st.divider()
+
+        st.dataframe(
+            portfolio_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        winner = (
+            portfolio_df
+            .sort_values(
+                "P/L %",
+                ascending=False
+            )
+            .iloc[0]
+        )
+
+        loser = (
+            portfolio_df
+            .sort_values(
+                "P/L %"
+            )
+            .iloc[0]
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.success(
+                f"""
+🚀 Top Winner
+
+{winner['Ticker']}
+
+{winner['P/L %']}%
+"""
+            )
+
+        with col2:
+
+            st.error(
+                f"""
+📉 Top Loser
+
+{loser['Ticker']}
+
+{loser['P/L %']}%
+"""
+            )
+
