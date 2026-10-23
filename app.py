@@ -576,8 +576,10 @@ elif menu == "League Info":
                 "Team": 0.18,
                 "Points": 0.07,
                 "GW Points": 0.07,
-                "Hits": 0.08,
-                "Remaining Chips": 0.12
+                "Hits": 0.03,
+                "Remaining Chips": 0.12,
+                "Manager" : 0.20,
+                "Team Value" : 0.10
             }
 
             col_widths = [
