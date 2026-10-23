@@ -3161,6 +3161,7 @@ elif menu == "IDX Nexus":
             
 elif menu == "MyPorto":
 
+    import os
 
     st.title("📁 My Portfolio")
 
@@ -3186,7 +3187,7 @@ elif menu == "MyPorto":
     )
 
     st.subheader(
-        "➕ Add Stock"
+        "➕ Add / Update Position"
     )
 
     col1, col2, col3 = st.columns(3)
@@ -3209,13 +3210,13 @@ elif menu == "MyPorto":
     with col3:
 
         avg_buy = st.number_input(
-            "Average Buy",
+            "Buy Price",
             min_value=1,
             value=1000
         )
 
     if st.button(
-        "Add Stock"
+        "Save Position"
     ):
 
         ticker = (
@@ -3226,18 +3227,72 @@ elif menu == "MyPorto":
 
         if ticker:
 
-            exists = (
+            existing = portfolio_df[
                 portfolio_df["Ticker"]
-                .astype(str)
-                .str.upper()
-                .eq(ticker)
-                .any()
-            )
+                == ticker
+            ]
 
-            if exists:
+            # saham sudah ada
+            if not existing.empty:
 
-                st.warning(
-                    f"{ticker} already exists"
+                old_lot = int(
+                    existing.iloc[0]["Lot"]
+                )
+
+                old_avg = float(
+                    existing.iloc[0]["Avg Buy"]
+                )
+
+                new_total_lot = (
+                    old_lot
+                    + lot
+                )
+
+                new_avg = (
+                    (
+                        old_lot
+                        * old_avg
+                    )
+                    +
+                    (
+                        lot
+                        * avg_buy
+                    )
+                ) / new_total_lot
+
+                portfolio_df.loc[
+                    portfolio_df["Ticker"]
+                    == ticker,
+                    "Lot"
+                ] = new_total_lot
+
+                portfolio_df.loc[
+                    portfolio_df["Ticker"]
+                    == ticker,
+                    "Avg Buy"
+                ] = round(
+                    new_avg,
+                    2
+                )
+
+                portfolio_df.to_csv(
+                    PORTFOLIO_FILE,
+                    index=False
+                )
+
+                st.success(
+                    f"""
+Position Updated
+
+Ticker :
+{ticker}
+
+Total Lot :
+{new_total_lot}
+
+New Avg :
+{round(new_avg,2)}
+"""
                 )
 
             else:
@@ -3271,10 +3326,10 @@ elif menu == "MyPorto":
                 )
 
                 st.success(
-                    f"{ticker} added"
+                    f"{ticker} added."
                 )
 
-                st.rerun()
+            st.rerun()
 
     st.divider()
 
@@ -3282,33 +3337,43 @@ elif menu == "MyPorto":
         "📊 Holdings"
     )
 
+    portfolio_df = pd.read_csv(
+        PORTFOLIO_FILE
+    )
+
     if portfolio_df.empty:
 
         st.info(
-            "Portfolio is empty"
+            "Portfolio kosong."
         )
 
     else:
 
-        st.dataframe(
-            portfolio_df,
-            hide_index=True,
-            use_container_width=True
+        st.metric(
+            "Total Stocks",
+            len(portfolio_df)
         )
 
-        st.caption(
-            f"{len(portfolio_df)} stocks"
+        st.dataframe(
+            portfolio_df.sort_values(
+                "Ticker"
+            ),
+            hide_index=True,
+            use_container_width=True
         )
 
         st.divider()
 
         st.subheader(
-            "🗑 Delete Stock"
+            "🗑 Delete Position"
         )
 
         delete_ticker = st.selectbox(
-            "Ticker",
-            portfolio_df["Ticker"]
+            "Select Stock",
+            portfolio_df[
+                "Ticker"
+            ]
+            .sort_values()
         )
 
         if st.button(
@@ -3326,17 +3391,18 @@ elif menu == "MyPorto":
             )
 
             st.success(
-                f"{delete_ticker} deleted"
+                f"{delete_ticker} deleted."
             )
 
             st.rerun()
 
+        st.divider()
+
         st.download_button(
-            label="📥 Download CSV",
+            label="📥 Download Portfolio",
             data=portfolio_df.to_csv(
                 index=False
             ),
             file_name="portfolio.csv",
             mime="text/csv"
         )
-
