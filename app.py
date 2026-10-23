@@ -276,11 +276,6 @@ st.dataframe(
             f"Error loading captain picks: {e}"
         )
 
-    except Exception as e:
-
-        st.error(f"Error: {e}")
-
-
 elif menu == "Awards":
     st.title("🏅 Awards")
     st.write("Penghargaan liga.")
