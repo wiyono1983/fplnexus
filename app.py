@@ -145,9 +145,63 @@ elif menu == "League Info":
         st.metric("Status", "Active")
 
 elif menu == "Standings":
-    st.title("📊 Standings")
-    st.write("Klasemen FPL League akan ditampilkan di sini.")
 
+    st.title("📊 Standings")
+
+    LEAGUE_ID = 147447
+
+    try:
+
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        standings = pd.DataFrame(
+            league["standings"]["results"]
+        )
+
+        table = standings[
+            [
+                "rank",
+                "entry_name",
+                "player_name",
+                "total"
+            ]
+        ].copy()
+
+        table.columns = [
+            "Rank",
+            "Team",
+            "Manager",
+            "Points"
+        ]
+
+        st.subheader(
+            "League Table"
+        )
+
+        st.dataframe(
+            table,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.subheader(
+            "Top 5 Teams"
+        )
+
+        st.bar_chart(
+            table.head(5).set_index(
+                "Team"
+            )["Points"]
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading standings: {e}"
+        )
 elif menu == "Statistics":
     st.title("📈 Statistics")
     st.write("Statistik league.")
