@@ -3008,8 +3008,6 @@ elif menu == "IDX Nexus":
             st.error(e)
     elif idx_menu == "Value Screener":
 
-    import yfinance as yf
-
     st.subheader(
         "💰 Value Screener"
     )
