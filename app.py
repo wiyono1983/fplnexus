@@ -3006,6 +3006,239 @@ elif menu == "IDX Nexus":
         except Exception as e:
 
             st.error(e)
+    elif idx_menu == "Value Screener":
+
+    import yfinance as yf
+
+    st.subheader(
+        "💰 Value Screener"
+    )
+
+    portfolio_df = pd.read_csv(
+        "portfolio.csv"
+    )
+
+    rows = []
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = (
+                row["Ticker"]
+                + ".JK"
+            )
+
+            stock = yf.Ticker(
+                ticker
+            )
+
+            info = stock.info
+
+            current_price = info.get(
+                "currentPrice"
+            )
+
+            pe = info.get(
+                "trailingPE"
+            )
+
+            pbv = info.get(
+                "priceToBook"
+            )
+
+            dividend = info.get(
+                "dividendYield"
+            )
+
+            market_cap = info.get(
+                "marketCap"
+            )
+
+            avg_buy = row[
+                "Avg Buy"
+            ]
+
+            profit_pct = round(
+                (
+                    (
+                        current_price
+                        - avg_buy
+                    )
+                    /
+                    avg_buy
+                )
+                * 100,
+                2
+            ) if current_price else None
+
+            recommendation = "HOLD"
+
+            if (
+                pbv is not None
+                and pe is not None
+            ):
+
+                if (
+                    pbv < 1.5
+                    and pe < 12
+                ):
+
+                    recommendation = "BUY"
+
+                elif (
+                    pbv > 4
+                    and profit_pct is not None
+                    and profit_pct > 30
+                ):
+
+                    recommendation = (
+                        "TAKE PROFIT"
+                    )
+
+            rows.append(
+                {
+                    "Ticker":
+                    row["Ticker"],
+
+                    "Current":
+                    current_price,
+
+                    "Avg Buy":
+                    avg_buy,
+
+                    "Profit %":
+                    profit_pct,
+
+                    "PE":
+                    pe,
+
+                    "PBV":
+                    pbv,
+
+                    "Dividend":
+                    round(
+                        dividend * 100,
+                        2
+                    )
+                    if dividend
+                    else None,
+
+                    "Market Cap":
+                    market_cap,
+
+                    "Action":
+                    recommendation
+                }
+            )
+
+        except Exception as e:
+
+            st.error(
+                f"{row['Ticker']} : {e}"
+            )
+
+    screener_df = pd.DataFrame(
+        rows
+    )
+
+    if screener_df.empty:
+
+        st.warning(
+            "No data loaded."
+        )
+
+    else:
+
+        st.dataframe(
+            screener_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        st.subheader(
+            "✅ Buy Candidates"
+        )
+
+        buy_df = screener_df[
+            screener_df["Action"]
+            == "BUY"
+        ]
+
+        if buy_df.empty:
+
+            st.info(
+                "No buy candidates."
+            )
+
+        else:
+
+            st.dataframe(
+                buy_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+        st.divider()
+
+        st.subheader(
+            "⚠ Take Profit Candidates"
+        )
+
+        sell_df = screener_df[
+            screener_df["Action"]
+            == "TAKE PROFIT"
+        ]
+
+        if sell_df.empty:
+
+            st.info(
+                "No take profit candidates."
+            )
+
+        else:
+
+            st.dataframe(
+                sell_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+        st.divider()
+
+        st.subheader(
+            "🏆 Cheapest PBV"
+        )
+
+        pbv_df = (
+            screener_df
+            .dropna(
+                subset=["PBV"]
+            )
+            .sort_values(
+                "PBV"
+            )
+            .head(10)
+        )
+
+        st.dataframe(
+            pbv_df[
+                [
+                    "Ticker",
+                    "PBV",
+                    "PE",
+                    "Profit %",
+                    "Action"
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True
+        )
+
+
+     
 
     # ==================================
     # COMPARE
