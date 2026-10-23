@@ -212,7 +212,71 @@ elif menu == "Captain Picks":
                     )
 
                     captain_data.append(
-                       
+                        {
+                            "Team": manager["entry_name"],
+                            "Captain": player_lookup.get(
+                                captain["element"],
+                                "Unknown"
+                            ),
+                            "Manager": manager["player_name"]
+                        }
+                    )
+
+                except:
+                    pass
+
+        captain_df = pd.DataFrame(
+            captain_data
+        )
+
+        st.subheader(
+            f"Captain Picks GW {current_gw}"
+        )
+
+        st.dataframe(
+            captain_df[
+                [
+                    "Team",
+                    "Captain",
+                    "Manager"
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.subheader(
+            "Most Selected Captains"
+        )
+
+        popularity = (
+            captain_df["Captain"]
+            .value_counts()
+            .reset_index()
+        )
+
+        popularity.columns = [
+            "Captain",
+            "Selected"
+        ]
+
+        st.dataframe(
+            popularity,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.bar_chart(
+            popularity.set_index(
+                "Captain"
+            )["Selected"]
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading captain picks: {e}"
+        )
 
 elif menu == "Awards":
     st.title("🏅 Awards")
