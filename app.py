@@ -453,7 +453,9 @@ elif page == "Fixtures":
 
     fixture_data = get_fixtures()
 
-    if fixture_data:
+    if not fixture_data:
+        st.warning("Fixture data tidak tersedia.")
+    else:
 
         fixture_df = pd.DataFrame(fixture_data)
 
@@ -483,82 +485,46 @@ elif page == "Fixtures":
 
         gw_df = fixture_df[
             fixture_df["event"] == selected_gw
-        ]
+        ].copy()
 
-        st.markdown(
-            f"### Gameweek {selected_gw}"
+        st.subheader(
+            f"Gameweek {selected_gw}"
         )
 
-        card_html = """
-        <div style="
-            border:1px solid #444;
-            border-radius:15px;
-            padding:15px;
-            margin-top:10px;
-        ">
-        """
+        with st.container(border=True):
 
-        for _, row in gw_df.iterrows():
+            for _, row in gw_df.iterrows():
 
-            kickoff = ""
-
-            if "kickoff_time" in row and pd.notna(row["kickoff_time"]):
-                try:
-                    kickoff = pd.to_datetime(
-                        row["kickoff_time"]
-                    ).strftime("%H:%M")
-                except:
-                    kickoff = "TBD"
-            else:
                 kickoff = "TBD"
 
-            card_html += f"""
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                padding:10px 0;
-            ">
-                <div style="
-                    width:40%;
-                    text-align:left;
-                    font-weight:600;
-                ">
-                    {row['Home Team']}
-                </div>
+                if (
+                    "kickoff_time" in gw_df.columns
+                    and pd.notna(row["kickoff_time"])
+                ):
+                    try:
+                        kickoff = pd.to_datetime(
+                            row["kickoff_time"]
+                        ).strftime("%d %b %H:%M")
+                    except:
+                        kickoff = "TBD"
 
-                <div style="
-                    width:20%;
-                    text-align:center;
-                    color:#999;
-                    font-size:14px;
-                ">
-                    {kickoff}
-                </div>
+                col1, col2, col3 = st.columns(
+                    [4, 2, 4]
+                )
 
-                <div style="
-                    width:40%;
-                    text-align:right;
-                    font-weight:600;
-                ">
-                    {row['Away Team']}
-                </div>
-            </div>
+                with col1:
+                    st.write(
+                        f"🏠 {row['Home Team']}"
+                    )
 
-            <hr style="
-                border:none;
-                border-top:1px solid #333;
-            ">
-            """
+                with col2:
+                    st.markdown(
+                        f"**{kickoff}**"
+                    )
 
-        card_html += "</div>"
+                with col3:
+                    st.write(
+                        f"✈️ {row['Away Team']}"
+                    )
 
-        st.markdown(
-            card_html,
-            unsafe_allow_html=True
-        )
-
-    else:
-        st.warning(
-            "Fixture data tidak tersedia."
-        )
+                st.divider()
