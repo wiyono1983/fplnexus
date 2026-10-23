@@ -2402,7 +2402,7 @@ Differentials:
         )
 
 
- elif menu == "Best XI":
+elif menu == "Best XI":
 
     st.title("🔥 Best XI")
 
