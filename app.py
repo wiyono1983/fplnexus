@@ -1,93 +1,16 @@
 import streamlit as st
 import pandas as pd
 import requests
-import streamlit as st
-
-# ===== SIDEBAR =====
-menu = st.sidebar.radio(
-    "📋 Menu",
-    [
-        "Fixtures",
-        "League Info",
-        "Standings",
-        "Statistics",
-        "Captain Picks",
-        "Awards"
-    ]
-)
-
-# ===== FIXTURES (KODE LAMA JANGAN DIUBAH) =====
-if menu == "Fixtures":
-    # SELURUH KODE FIXTURES YANG SUDAH ADA
-    show_fixtures()
-
-# ===== LEAGUE INFO =====
-elif menu == "League Info":
-    st.title("🏆 League Info")
-    st.info("FPL League ID: 147447")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.metric("League ID", "147447")
-
-    with col2:
-        st.metric("Status", "Active")
-
-    st.subheader("Tentang Liga")
-    st.write("""
-    Halaman ini berisi informasi umum liga,
-    statistik peserta, dan ringkasan kompetisi.
-    """)
-
-# ===== STANDINGS =====
-elif menu == "Standings":
-    st.title("📊 Standings")
-
-    st.write(
-        "Tampilkan klasemen FPL league di sini."
-    )
-
-# ===== STATISTICS =====
-elif menu == "Statistics":
-    st.title("📈 Statistics")
-
-    st.write("""
-    - Average GW Score
-    - Highest Weekly Score
-    - Most Captain Points
-    - Transfer Statistics
-    """)
-
-# ===== CAPTAIN PICKS =====
-elif menu == "Captain Picks":
-    st.title("🧢 Captain Picks")
-
-    st.write(
-        "Menampilkan captain yang paling banyak dipilih peserta."
-    )
-
-# ===== AWARDS =====
-elif menu == "Awards":
-    st.title("🏅 Awards")
-
-    st.write("""
-    🥇 Best Manager of the Week
-
-    🚀 Biggest Rank Climber
-
-    ⚽ Highest GW Score
-
-    🎯 Best Captain Pick
-    """)
 
 st.set_page_config(
     page_title="FPL Fixtures",
-    page_icon="⚽"
+    page_icon="⚽",
+    layout="wide"
 )
 
-st.title("⚽ FPL Fixtures")
-
+# =========================
+# FIXTURES FUNCTION
+# =========================
 @st.cache_data(ttl=300)
 def load_data():
 
@@ -104,98 +27,135 @@ def load_data():
     return bootstrap, fixtures
 
 
-try:
+def show_fixtures():
 
-    bootstrap, fixtures = load_data()
+    st.title("⚽ FPL Fixtures")
 
-    teams = pd.DataFrame(
-        bootstrap["teams"]
-    )
+    try:
 
-    fixture_df = pd.DataFrame(
-        fixtures
-    )
+        bootstrap, fixtures = load_data()
 
-    team_lookup = dict(
-        zip(
-            teams["id"],
-            teams["name"]
+        teams = pd.DataFrame(bootstrap["teams"])
+        fixture_df = pd.DataFrame(fixtures)
+
+        team_lookup = dict(
+            zip(
+                teams["id"],
+                teams["name"]
+            )
         )
-    )
 
-    fixture_df["Home"] = (
-        fixture_df["team_h"].map(team_lookup)
-    )
+        fixture_df["Home"] = fixture_df["team_h"].map(team_lookup)
+        fixture_df["Away"] = fixture_df["team_a"].map(team_lookup)
 
-    fixture_df["Away"] = (
-        fixture_df["team_a"].map(team_lookup)
-    )
+        fixture_df["kickoff_time"] = (
+            pd.to_datetime(
+                fixture_df["kickoff_time"],
+                utc=True,
+                errors="coerce"
+            )
+            .dt.tz_convert("Asia/Jakarta")
+        )
 
-    fixture_df["kickoff_time"] = (
-    pd.to_datetime(
-        fixture_df["kickoff_time"],
-        utc=True,
-        errors="coerce"
-    )
-    .dt.tz_convert("Asia/Jakarta")
+        gw_list = sorted(
+            fixture_df["event"]
+            .dropna()
+            .unique()
+        )
+
+        gw = st.selectbox(
+            "Gameweek",
+            gw_list
+        )
+
+        gw_df = fixture_df[
+            fixture_df["event"] == gw
+        ].copy()
+
+        st.subheader(
+            f"Gameweek {gw}"
+        )
+
+        start_date = (
+            gw_df["kickoff_time"]
+            .min()
+            .strftime("%d %b")
+        )
+
+        end_date = (
+            gw_df["kickoff_time"]
+            .max()
+            .strftime("%d %b %Y")
+        )
+
+        st.caption(
+            f"{start_date} - {end_date}"
+        )
+
+        gw_df["KO"] = (
+            gw_df["kickoff_time"]
+            .dt.strftime("%H:%M")
+        )
+
+        fixture_view = gw_df[
+            ["Home", "KO", "Away"]
+        ]
+
+        st.dataframe(
+            fixture_view,
+            hide_index=True,
+            use_container_width=True
+        )
+
+    except Exception as e:
+        st.error(f"Error: {e}")
+
+
+# =========================
+# SIDEBAR
+# =========================
+menu = st.sidebar.radio(
+    "📋 Menu",
+    [
+        "Fixtures",
+        "League Info",
+        "Standings",
+        "Statistics",
+        "Captain Picks",
+        "Awards"
+    ]
 )
 
-    gw_list = sorted(
-        fixture_df["event"]
-        .dropna()
-        .unique()
-    )
+# =========================
+# PAGES
+# =========================
+if menu == "Fixtures":
+    show_fixtures()
 
-    gw = st.selectbox(
-        "Gameweek",
-        gw_list
-    )
+elif menu == "League Info":
+    st.title("🏆 League Info")
+    st.info("FPL League ID: 147447")
 
-    gw_df = fixture_df[
-        fixture_df["event"] == gw
-    ].copy()
+    col1, col2 = st.columns(2)
 
-    st.subheader(
-        f"Gameweek {gw}"
-    )
+    with col1:
+        st.metric("League ID", "147447")
 
-    start_date = (
-        gw_df["kickoff_time"]
-        .min()
-        .strftime("%d %b")
-    )
+    with col2:
+        st.metric("Status", "Active")
 
-    end_date = (
-        gw_df["kickoff_time"]
-        .max()
-        .strftime("%d %b %Y")
-    )
+elif menu == "Standings":
+    st.title("📊 Standings")
+    st.write("Klasemen FPL League akan ditampilkan di sini.")
 
-    st.caption(
-        f"{start_date} - {end_date}"
-    )
+elif menu == "Statistics":
+    st.title("📈 Statistics")
+    st.write("Statistik league.")
 
-    gw_df["KO"] = (
-        gw_df["kickoff_time"]
-        .dt.strftime("%H:%M")
-    )
+elif menu == "Captain Picks":
+    st.title("🧢 Captain Picks")
+    st.write("Captain terpopuler.")
 
-    fixture_view = gw_df[
-        [
-            "Home",
-            "KO",
-            "Away"
-        ]
-    ]
-
-    st.dataframe(
-        fixture_view,
-        hide_index=True,
-        use_container_width=True
-    )
-
-except Exception as e:
-
-    st.error(
-        f"Error: {e}"
-    )
+elif menu == "Awards":
+    st.title("🏅 Awards")
+    st.write("Penghargaan liga.")
