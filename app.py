@@ -447,23 +447,18 @@ elif page == "Rank History":
 # =========================
 # FIXTURES
 # =========================
-elif page == "Fixtures":
+  elif page == "Fixtures":
 
     st.title("📅 Fixtures")
 
     fixture_data = get_fixtures()
 
-    if not fixture_data:
-        st.warning("Fixture data tidak tersedia.")
-    else:
+    if fixture_data:
 
         fixture_df = pd.DataFrame(fixture_data)
 
         team_lookup = dict(
-            zip(
-                teams["id"],
-                teams["name"]
-            )
+            zip(teams["id"], teams["name"])
         )
 
         fixture_df["Home Team"] = (
@@ -487,34 +482,37 @@ elif page == "Fixtures":
             fixture_df["event"] == selected_gw
         ].copy()
 
-        st.subheader(
-            f"Gameweek {selected_gw}"
+        # Ambil rentang tanggal GW
+        gw_dates = pd.to_datetime(
+            gw_df["kickoff_time"]
+        )
+
+        start_date = gw_dates.min().strftime("%d %b")
+        end_date = gw_dates.max().strftime("%d %b %Y")
+
+        st.markdown(
+            f"## Gameweek {selected_gw}"
+        )
+
+        st.caption(
+            f"{start_date} - {end_date}"
         )
 
         with st.container(border=True):
 
             for _, row in gw_df.iterrows():
 
-                kickoff = "TBD"
-
-                if (
-                    "kickoff_time" in gw_df.columns
-                    and pd.notna(row["kickoff_time"])
-                ):
-                    try:
-                        kickoff = pd.to_datetime(
-                            row["kickoff_time"]
-                        ).strftime("%d %b %H:%M")
-                    except:
-                        kickoff = "TBD"
+                kickoff = pd.to_datetime(
+                    row["kickoff_time"]
+                ).strftime("%H:%M")
 
                 col1, col2, col3 = st.columns(
-                    [4, 2, 4]
+                    [5, 2, 5]
                 )
 
                 with col1:
                     st.write(
-                        f"🏠 {row['Home Team']}"
+                        row["Home Team"]
                     )
 
                 with col2:
@@ -524,7 +522,7 @@ elif page == "Fixtures":
 
                 with col3:
                     st.write(
-                        f"✈️ {row['Away Team']}"
+                        row["Away Team"]
                     )
 
-                st.divider()
+
