@@ -446,9 +446,6 @@ elif page == "Rank History":
 # =========================
 # FIXTURES
 # =========================
-# =========================
-# FIXTURES
-# =========================
 elif page == "Fixtures":
 
     st.title("📅 Fixtures")
@@ -457,16 +454,12 @@ elif page == "Fixtures":
 
     if not fixture_data:
         st.warning("Fixture data tidak tersedia.")
-
     else:
 
         fixture_df = pd.DataFrame(fixture_data)
 
         team_lookup = dict(
-            zip(
-                teams["id"],
-                teams["name"]
-            )
+            zip(teams["id"], teams["name"])
         )
 
         fixture_df["Home Team"] = (
@@ -491,21 +484,16 @@ elif page == "Fixtures":
         ].copy()
 
         gw_df["kickoff_time"] = pd.to_datetime(
-            gw_df["kickoff_time"],
-            utc=True
+            gw_df["kickoff_time"]
         )
 
-        start_date = (
-            gw_df["kickoff_time"]
-            .min()
-            .strftime("%d %b")
-        )
+        start_date = gw_df[
+            "kickoff_time"
+        ].min().strftime("%d %b")
 
-        end_date = (
-            gw_df["kickoff_time"]
-            .max()
-            .strftime("%d %b %Y")
-        )
+        end_date = gw_df[
+            "kickoff_time"
+        ].max().strftime("%d %b %Y")
 
         st.subheader(
             f"Gameweek {selected_gw}"
@@ -519,41 +507,13 @@ elif page == "Fixtures":
 
             for _, row in gw_df.iterrows():
 
-                kickoff = (
-                    row["kickoff_time"]
-                    .strftime("%H:%M")
+                kickoff = row[
+                    "kickoff_time"
+                ].strftime("%H:%M")
+
+                home = row["Home Team"]
+                away = row["Away Team"]
+
+                st.write(
+                    f"{home:<20} {kickoff} {away}"
                 )
-
-                col1, col2, col3 = st.columns(
-                    [5, 2, 5]
-                )
-
-                with col1:
-                    st.markdown(
-                        f"""
-                        <div style='text-align:right'>
-                        {row['Home Team']}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                with col2:
-                    st.markdown(
-                        f"""
-                        <div style='text-align:center'>
-                        <b>{kickoff}</b>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                with col3:
-                    st.markdown(
-                        f"""
-                        <div style='text-align:left'>
-                        {row['Away Team']}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
