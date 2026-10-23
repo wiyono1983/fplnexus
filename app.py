@@ -3599,9 +3599,7 @@ elif menu == "Statistics":
             top10["Player"] = (
                 top10["Player"]
                 .astype(str)
-                .str.extract(
-                    r"([A-ZÀ-ÿ][A-Za-zÀ-ÿ\-']+)"
-                )[0]
+                .str[:-6]
             )
 
             top10 = top10.head(10)
@@ -3641,7 +3639,7 @@ elif menu == "Statistics":
             )
 
         # =========================
-        # FPL STATS
+        # STANDARD FPL STATS
         # =========================
         else:
 
@@ -3671,25 +3669,22 @@ elif menu == "Statistics":
                 selected_stat
             ]
 
-            stats_df = (
-                players[
-                    [
-                        "web_name",
-                        stat_col
-                    ]
+            stats_df = players[
+                [
+                    "web_name",
+                    stat_col
                 ]
-                .rename(
-                    columns={
-                        "web_name": "Player",
-                        stat_col: "Value"
-                    }
-                )
-                .sort_values(
-                    "Value",
-                    ascending=False
-                )
-                .head(10)
-            )
+            ].copy()
+
+            stats_df.columns = [
+                "Player",
+                selected_stat
+            ]
+
+            stats_df = stats_df.sort_values(
+                selected_stat,
+                ascending=False
+            ).head(10)
 
             stats_df.insert(
                 0,
@@ -3704,15 +3699,8 @@ elif menu == "Statistics":
                 f"🏆 Top 10 {selected_stat}"
             )
 
-            display_df = stats_df.rename(
-                columns={
-                    "Value":
-                    selected_stat
-                }
-            )
-
             st.dataframe(
-                display_df,
+                stats_df,
                 hide_index=True,
                 use_container_width=True
             )
@@ -3729,7 +3717,7 @@ elif menu == "Statistics":
                 wa_text += (
                     f"{row.Rank}. "
                     f"{row.Player} "
-                    f"({row.Value})\n"
+                    f"({getattr(row, selected_stat)})\n"
                 )
 
             st.subheader(
@@ -3746,6 +3734,3 @@ elif menu == "Statistics":
         st.error(
             f"Error loading statistics: {e}"
         )
-
-
-            
