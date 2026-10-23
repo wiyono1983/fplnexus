@@ -459,6 +459,22 @@ elif page == "Fixtures":
         fixture_df = pd.DataFrame(
             fixture_data
         )
+team_lookup = dict(
+    zip(
+        teams["id"],
+        teams["name"]
+    )
+)
+
+fixture_df["Home Team"] = (
+    fixture_df["team_h"]
+    .map(team_lookup)
+)
+
+fixture_df["Away Team"] = (
+    fixture_df["team_a"]
+    .map(team_lookup)
+)
 
         cols = [
             c for c in [
@@ -472,6 +488,15 @@ elif page == "Fixtures":
         ]
 
         st.dataframe(
-            fixture_df[cols],
-            use_container_width=True
-        )
+    fixture_df[
+        [
+            "event",
+            "Home Team",
+            "Away Team",
+            "team_h_difficulty",
+            "team_a_difficulty"
+        ]
+    ],
+    use_container_width=True
+)
+
