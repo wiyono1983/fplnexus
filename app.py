@@ -89,36 +89,29 @@ try:
         f"{start_date} - {end_date}"
     )
 
-    for _, row in gw_df.iterrows():
+    
+        for _, row in gw_df.iterrows():
 
-        kickoff = "--:--"
+    kickoff = "--:--"
 
-        if pd.notna(
-            row["kickoff_time"]
-        ):
-            kickoff = (
-                row["kickoff_time"]
-                .strftime("%H:%M")
-            )
+    if pd.notna(row["kickoff_time"]):
+        kickoff = row["kickoff_time"].strftime("%H:%M")
 
-        col1, col2, col3 = st.columns(
-            [4, 2, 4]
-        )
-
-        with col1:
-            st.markdown(
-                row["Home Team"]
-            )
-
-        with col2:
-            st.markdown(
-                f"**{kickoff}**"
-            )
-
-        with col3:
-            st.markdown(
-                row["Away Team"]
-            )
+    st.markdown(
+        f"""
+        <div style="
+            text-align:center;
+            padding:4px 0;
+        ">
+            {row['Home Team']}
+            &nbsp;&nbsp;
+            <b>{kickoff}</b>
+            &nbsp;&nbsp;
+            {row['Away Team']}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 except Exception as e:
     st.error(
