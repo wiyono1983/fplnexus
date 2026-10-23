@@ -612,86 +612,86 @@ elif menu == "My Team":
                ]
           )
 
-    st.dataframe(
-        compare_df,
-        hide_index=True,
-        use_container_width=True
-    )
+            st.dataframe(
+                 compare_df,
+                 hide_index=True,
+                 use_container_width=True
+             )
 
-    sell_score_1 = 0
-    sell_score_2 = 0
+            sell_score_1 = 0
+            sell_score_2 = 0
 
-    if p1["Points"] < p2["Points"]:
-        sell_score_1 += 1
-    else:
-        sell_score_2 += 1
+            if p1["Points"] < p2["Points"]:
+                sell_score_1 += 1
+            else:
+                sell_score_2 += 1
 
-    if p1["Form"] < p2["Form"]:
-        sell_score_1 += 1
-    else:
-        sell_score_2 += 1
+            if p1["Form"] < p2["Form"]:
+                sell_score_1 += 1
+            else:
+                sell_score_2 += 1
 
-    if p1["Price"] > p2["Price"]:
-        sell_score_1 += 1
-    else:
-        sell_score_2 += 1
+            if p1["Price"] > p2["Price"]:
+                sell_score_1 += 1
+            else:
+                sell_score_2 += 1
 
-    st.subheader(
-        "🚨 Recommendation"
-    )
+            st.subheader(
+               "🚨 Recommendation"
+            )
 
-    col1, col2 = st.columns(2)
+            col1, col2 = st.columns(2)
 
-    with col1:
+            with col1:
 
-        st.metric(
-            compare_1,
-            f"{sell_score_1}/3"
-        )
+                st.metric(
+                   compare_1,
+                   f"{sell_score_1}/3"
+                )
 
-    with col2:
+            with col2:
 
-        st.metric(
-            compare_2,
-            f"{sell_score_2}/3"
-        )
+                st.metric(
+                   compare_2,
+                   f"{sell_score_2}/3"
+                )
 
-    if sell_score_1 > sell_score_2:
+           if sell_score_1 > sell_score_2:
 
-        st.error(
-            f"""
-Recommended Sell
+                st.error(
+                   f"""
+              Recommended Sell
 
-❌ {compare_1}
+              ❌ {compare_1}
 
-Reason:
-Lower overall value compared with {compare_2}.
-"""
-        )
+              Reason:
+              Lower overall value compared with {compare_2}.
+              """
+              )
 
-    elif sell_score_2 > sell_score_1:
+            elif sell_score_2 > sell_score_1:
 
-        st.error(
-            f"""
-Recommended Sell
+                st.error(
+                  f"""
+              Recommended Sell
 
-❌ {compare_2}
+              ❌ {compare_2}
 
-Reason:
-Lower overall value compared with {compare_1}.
-"""
-        )
+              Reason:
+              Lower overall value compared with {compare_1}.
+              """
+              )
 
-    else:
+            else:
 
-        st.warning(
-            """
-Both players have similar profile.
+                st.warning(
+                  """
+                Both players have similar profile.
 
-Consider using fixtures or personal preference
-as the deciding factor.
-"""
-        )
+                Consider using fixtures or personal preference
+                as the deciding factor.
+                """
+            )
 
             st.divider()
 
