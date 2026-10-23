@@ -1299,9 +1299,9 @@ elif menu == "Statistics":
             f"Error loading statistics: {e}"
         )
 
-elif menu == "Captain Picks":
+ elif menu == "Captain Picks":
 
-    st.title("🧢 Captain Picks")
+    st.title("🧢 Captain & Vice Captain")
 
     LEAGUE_ID = 147447
 
@@ -1317,6 +1317,24 @@ elif menu == "Captain Picks":
             for event in bootstrap["events"]
             if event["is_current"]
         )
+
+        default_gw = (
+            8
+            if current_gw >= 8
+            else current_gw
+        )
+
+        selected_gw = st.selectbox(
+            "Select Gameweek",
+            list(range(1, current_gw + 1)),
+            index=default_gw - 1
+        )
+
+        if selected_gw == current_gw:
+
+            st.info(
+                f"GW{selected_gw} selections may still change before deadline."
+            )
 
         players = pd.DataFrame(
             bootstrap["elements"]
@@ -1338,87 +1356,183 @@ elif menu == "Captain Picks":
 
         captain_data = []
 
-        with st.spinner(
-            "Loading captain picks..."
-        ):
+        progress = st.progress(0)
 
-            for manager in entries:
+        for idx, manager in enumerate(entries):
 
-                try:
+            try:
 
-                    entry_id = manager["entry"]
+                entry_id = manager["entry"]
 
-                    picks = requests.get(
-                        f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
-                        timeout=20
-                    ).json()
+                picks = requests.get(
+                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{selected_gw}/picks/",
+                    timeout=20
+                ).json()
 
-                    captain = next(
-                        p
-                        for p in picks["picks"]
-                        if p["is_captain"]
-                    )
+                captain = next(
+                    p
+                    for p in picks["picks"]
+                    if p["is_captain"]
+                )
 
-                    captain_data.append(
-                        {
-                            "Team": manager["entry_name"],
-                            "Captain": player_lookup.get(
-                                captain["element"],
-                                "Unknown"
-                            ),
-                            "Manager": manager["player_name"]
-                        }
-                    )
+                vice = next(
+                    p
+                    for p in picks["picks"]
+                    if p["is_vice_captain"]
+                )
 
-                except:
-                    pass
+                captain_data.append(
+                    {
+                        "Team": manager["entry_name"],
+                        "Manager": manager["player_name"],
+                        "Captain": player_lookup.get(
+                            captain["element"],
+                            "Unknown"
+                        ),
+                        "Vice Captain": player_lookup.get(
+                            vice["element"],
+                            "Unknown"
+                        )
+                    }
+                )
+
+                progress.progress(
+                    (idx + 1)
+                    / len(entries)
+                )
+
+            except:
+                pass
+
+        progress.empty()
 
         captain_df = pd.DataFrame(
             captain_data
         )
 
         st.subheader(
-            f"Captain Picks GW {current_gw}"
+            f"GW{selected_gw} Captain Picks"
         )
 
         st.dataframe(
-            captain_df[
-                [
-                    "Team",
-                    "Captain",
-                    "Manager"
-                ]
-            ],
+            captain_df,
             hide_index=True,
             use_container_width=True
         )
 
+        st.divider()
+
         st.subheader(
-            "Most Selected Captains"
+            "🧢 Captain Ownership"
         )
 
-        popularity = (
+        captain_ownership = (
             captain_df["Captain"]
             .value_counts()
             .reset_index()
         )
 
-        popularity.columns = [
+        captain_ownership.columns = [
             "Captain",
-            "Selected"
+            "Managers"
         ]
 
+        captain_ownership["Ownership %"] = (
+            captain_ownership["Managers"]
+            / len(captain_df)
+            * 100
+        ).round(1)
+
         st.dataframe(
-            popularity,
+            captain_ownership,
             hide_index=True,
             use_container_width=True
         )
 
         st.bar_chart(
-            popularity.set_index(
+            captain_ownership.set_index(
                 "Captain"
-            )["Selected"]
+            )["Ownership %"]
         )
+
+        st.divider()
+
+        st.subheader(
+            "🎖 Vice Captain Ownership"
+        )
+
+        vice_ownership = (
+            captain_df["Vice Captain"]
+            .value_counts()
+            .reset_index()
+        )
+
+        vice_ownership.columns = [
+            "Vice Captain",
+            "Managers"
+        ]
+
+        vice_ownership["Ownership %"] = (
+            vice_ownership["Managers"]
+            / len(captain_df)
+            * 100
+        ).round(1)
+
+        st.dataframe(
+            vice_ownership,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.bar_chart(
+            vice_ownership.set_index(
+                "Vice Captain"
+            )["Ownership %"]
+        )
+
+        st.divider()
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            if not captain_ownership.empty:
+
+                most_cap = captain_ownership.iloc[0]
+
+                st.success(
+                    f"""
+🧢 MOST CAPTAINED
+
+{most_cap['Captain']}
+
+Managers:
+{most_cap['Managers']}
+
+Ownership:
+{most_cap['Ownership %']}%
+"""
+                )
+
+        with col2:
+
+            if not vice_ownership.empty:
+
+                most_vc = vice_ownership.iloc[0]
+
+                st.info(
+                    f"""
+🎖 MOST VICE CAPTAINED
+
+{most_vc['Vice Captain']}
+
+Managers:
+{most_vc['Managers']}
+
+Ownership:
+{most_vc['Ownership %']}%
+"""
+                )
 
     except Exception as e:
 
