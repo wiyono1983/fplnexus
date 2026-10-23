@@ -567,20 +567,20 @@ elif menu == "My Team":
 
             with col1:
 
-            compare_1 = st.selectbox(
-              "Player 1",
-              squad_df["Player"],
-              key="compare_1"
-            )
+              compare_1 = st.selectbox(
+                 "Player 1",
+                 squad_df["Player"],
+                 key="compare_1"
+              )
 
             with col2:
 
-             compare_2 = st.selectbox(
-               "Player 2",
-               squad_df["Player"],
-               index=1 if len(squad_df) > 1 else 0,
-               key="compare_2"
-            )
+               compare_2 = st.selectbox(
+                 "Player 2",
+                 squad_df["Player"],
+                 index=1 if len(squad_df) > 1 else 0,
+                 key="compare_2"
+             )
 
            if compare_1 != compare_2:
 
