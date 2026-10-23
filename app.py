@@ -456,9 +456,7 @@ elif page == "Fixtures":
 
     if fixture_data:
 
-        fixture_df = pd.DataFrame(
-            fixture_data
-        )
+        fixture_df = pd.DataFrame(fixture_data)
 
         team_lookup = dict(
             zip(
@@ -475,50 +473,54 @@ elif page == "Fixtures":
             fixture_df["team_a"].map(team_lookup)
         )
 
-        st.markdown("## 📅 Fixtures")
+        gw = st.selectbox(
+            "Gameweek",
+            sorted(fixture_df["event"].dropna().unique())
+        )
 
-gw = st.selectbox(
-    "Gameweek",
-    sorted(fixtures_df["event"].unique()),
-    index=0
-)
+        gw_df = fixture_df[
+            fixture_df["event"] == gw
+        ]
 
-gw_df = fixtures_df[fixtures_df["event"] == gw]
+        st.markdown(f"### GW {gw}")
 
-for _, row in gw_df.iterrows():
+        for _, row in gw_df.iterrows():
 
-    st.markdown(
-        f"""
-        <div style="
-            border:1px solid #ddd;
-            border-radius:12px;
-            padding:16px;
-            margin-bottom:12px;
-        ">
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                font-size:18px;
-                font-weight:600;
-            ">
-                <div style="width:40%;text-align:right;">
-                    {row['Home Team']}
-                </div>
-
+            st.markdown(
+                f"""
                 <div style="
-                    width:20%;
-                    text-align:center;
-                    font-weight:bold;
+                    border:1px solid #333;
+                    border-radius:12px;
+                    padding:14px;
+                    margin-bottom:10px;
                 ">
-                    vs
-                </div>
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        font-size:18px;
+                        font-weight:600;
+                    ">
+                        <div style="width:40%;text-align:right;">
+                            {row['Home Team']}
+                        </div>
 
-                <div style="width:40%;text-align:left;">
-                    {row['Away Team']}
+                        <div style="
+                            width:20%;
+                            text-align:center;
+                            color:#999;
+                        ">
+                            VS
+                        </div>
+
+                        <div style="width:40%;text-align:left;">
+                            {row['Away Team']}
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+                """,
+                unsafe_allow_html=True
+            )
+
+    else:
+        st.warning("Fixture data not available")
