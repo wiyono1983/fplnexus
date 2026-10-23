@@ -571,7 +571,7 @@ elif menu == "League Info":
 
             # Fixed FPL-style column widths
             width_map = {
-                "Rank": 0.08,
+                "Rank": 0.03,
                 "Δ Rank": 0.08,
                 "Team": 0.18,
                 "Points": 0.07,
