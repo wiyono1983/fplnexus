@@ -117,12 +117,13 @@ def show_fixtures():
 menu = st.sidebar.radio(
     "📋 Menu",
     [
-        "Fixtures",
-        "League Info",
-        "Standings",
-        "Statistics",
-        "Captain Picks",
-        "Awards"
+    "Fixtures",
+    "My Team",
+    "League Info",
+    "Standings",
+    "Statistics",
+    "Captain Picks",
+    "Awards"
     ]
 )
 
@@ -143,6 +144,168 @@ elif menu == "League Info":
 
     with col2:
         st.metric("Status", "Active")
+elif menu == "My Team":
+
+    st.title("👤 My Team")
+
+    entry_id = st.number_input(
+        "Enter FPL Team ID",
+        min_value=1,
+        step=1
+    )
+
+    if entry_id:
+
+        try:
+
+            bootstrap = requests.get(
+                "https://fantasy.premierleague.com/api/bootstrap-static/",
+                timeout=20
+            ).json()
+
+            current_gw = next(
+                e["id"]
+                for e in bootstrap["events"]
+                if e["is_current"]
+            )
+
+            picks = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
+                timeout=20
+            ).json()
+
+            players = pd.DataFrame(
+                bootstrap["elements"]
+            )
+
+            positions = {
+                1: "GK",
+                2: "DEF",
+                3: "MID",
+                4: "FWD"
+            }
+
+            squad = []
+
+            for p in picks["picks"]:
+
+                player = players[
+                    players["id"] == p["element"]
+                ].iloc[0]
+
+                squad.append(
+                    {
+                        "Player": player["web_name"],
+                        "Position": positions[
+                            player["element_type"]
+                        ],
+                        "Price": player["now_cost"] / 10,
+                        "Points": player["total_points"]
+                    }
+                )
+
+            squad_df = pd.DataFrame(
+                squad
+            )
+
+            st.subheader(
+                f"My Squad - GW {current_gw}"
+            )
+
+            st.dataframe(
+                squad_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+            st.subheader(
+                "🔍 Suggested Transfer"
+            )
+
+            lowest = squad_df.sort_values(
+                "Points"
+            ).iloc[0]
+
+            player_pos = lowest["Position"]
+            player_price = lowest["Price"]
+
+            if player_pos == "GK":
+                pos_id = 1
+            elif player_pos == "DEF":
+                pos_id = 2
+            elif player_pos == "MID":
+                pos_id = 3
+            else:
+                pos_id = 4
+
+            candidates = players[
+                players["element_type"] == pos_id
+            ].copy()
+
+            candidates["Price"] = (
+                candidates["now_cost"] / 10
+            )
+
+            candidates = candidates[
+                candidates["Price"]
+                >= player_price
+            ]
+
+            candidates = candidates.sort_values(
+                "total_points",
+                ascending=False
+            )
+
+            suggestions = candidates[
+                [
+                    "web_name",
+                    "Price",
+                    "total_points",
+                    "form"
+                ]
+            ].head(10)
+
+            suggestions.columns = [
+                "Player",
+                "Price",
+                "Points",
+                "Form"
+            ]
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.metric(
+                    "Current Weakest Asset",
+                    lowest["Player"]
+                )
+                st.caption(
+                    f'{lowest["Position"]} • {lowest["Points"]} pts'
+                )
+
+            with col2:
+                st.metric(
+                    "Current Price",
+                    f'£{lowest["Price"]:.1f}m'
+                )
+
+            st.dataframe(
+                suggestions,
+                hide_index=True,
+                use_container_width=True
+            )
+
+            st.bar_chart(
+                suggestions.set_index(
+                    "Player"
+                )["Points"]
+            )
+
+        except Exception as e:
+
+            st.error(
+                f"Error loading team: {e}"
+            )
 
 elif menu == "Standings":
 
