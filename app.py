@@ -306,7 +306,6 @@ if menu == "Home":
 
 elif menu == "Fixtures":
     show_fixtures()
-
 elif menu == "League Info":
 
     st.title("🏆 League Info")
@@ -338,13 +337,6 @@ elif menu == "League Info":
                 len(standings)
             )
 
-        chip_names = {
-            "wildcard": "Wildcard",
-            "freehit": "Free Hit",
-            "bboost": "Bench Boost",
-            "3xc": "Triple Captain"
-        }
-
         members = []
 
         progress = st.progress(0)
@@ -371,13 +363,13 @@ elif menu == "League Info":
                     else {}
                 )
 
-                hits = latest_gw.get(
-                    "event_transfers_cost",
+                gw_points = latest_gw.get(
+                    "points",
                     0
                 )
 
-                gw_points = latest_gw.get(
-                    "points",
+                hits = latest_gw.get(
+                    "event_transfers_cost",
                     0
                 )
 
@@ -393,18 +385,30 @@ elif menu == "League Info":
                     []
                 )
 
-                if chips:
+                used_chips = {
+                    chip["name"]
+                    for chip in chips
+                }
 
-                    last_chip = chips[-1]
+                remaining = []
 
-                    chip_used = (
-                        f"{chip_names.get(last_chip['name'], last_chip['name'])}"
-                        f" (GW{last_chip['event']})"
-                    )
+                if "wildcard" not in used_chips:
+                    remaining.append("WC")
 
-                else:
+                if "freehit" not in used_chips:
+                    remaining.append("FH")
 
-                    chip_used = "None"
+                if "bboost" not in used_chips:
+                    remaining.append("BB")
+
+                if "3xc" not in used_chips:
+                    remaining.append("TC")
+
+                remaining_chips = (
+                    ", ".join(remaining)
+                    if remaining
+                    else "-"
+                )
 
                 members.append(
                     {
@@ -414,14 +418,15 @@ elif menu == "League Info":
                         "Team ID": entry_id,
                         "Points": row["total"],
                         "GW Points": gw_points,
-                        "Hits": f"-{hits}" if hits > 0 else "0",
-                        "Last Chip": chip_used,
-                        "Team Value": f"£{team_value:.1f}m"
+                        "Hits": hits,
+                        "Remaining Chips": remaining_chips,
+                        "Team Value": team_value
                     }
                 )
 
                 progress.progress(
-                    (idx + 1) / len(standings)
+                    (idx + 1)
+                    / len(standings)
                 )
 
             except:
@@ -433,12 +438,31 @@ elif menu == "League Info":
             members
         )
 
+        display_df = league_df.copy()
+
+        display_df["Hits"] = display_df[
+            "Hits"
+        ].apply(
+            lambda x:
+            f"-{x}"
+            if x > 0
+            else "0"
+        )
+
+        display_df["Team Value"] = (
+            display_df["Team Value"]
+            .apply(
+                lambda x:
+                f"£{x:.1f}m"
+            )
+        )
+
         st.subheader(
             "League Members"
         )
 
         st.dataframe(
-            league_df,
+            display_df,
             hide_index=True,
             use_container_width=True
         )
@@ -449,38 +473,49 @@ elif menu == "League Info":
             "🏅 Awards Snapshot"
         )
 
-        col1, col2, col3 = st.columns(3)
+        leader = league_df.sort_values(
+            "Rank"
+        ).iloc[0]
+
+        gw_winner = league_df.sort_values(
+            "GW Points",
+            ascending=False
+        ).iloc[0]
+
+        biggest_hit = league_df.sort_values(
+            "Hits",
+            ascending=False
+        ).iloc[0]
+
+        richest = league_df.sort_values(
+            "Team Value",
+            ascending=False
+        ).iloc[0]
+
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-
-            leader = league_df.iloc[0]
-
             st.metric(
                 "👑 League Leader",
-                leader["Manager"]
+                leader["Team"]
             )
 
         with col2:
-
-            most_hits = league_df.sort_values(
-                "Hits"
-            ).iloc[0]
-
             st.metric(
-                "💥 Biggest Hit",
-                most_hits["Manager"]
+                "🎯 GW Winner",
+                gw_winner["Team"]
             )
 
         with col3:
-
-            best_gw = league_df.sort_values(
-                "GW Points",
-                ascending=False
-            ).iloc[0]
-
             st.metric(
-                "🎯 GW Winner",
-                best_gw["Manager"]
+                "💥 Biggest Hit",
+                biggest_hit["Team"]
+            )
+
+        with col4:
+            st.metric(
+                "💰 Richest Squad",
+                richest["Team"]
             )
 
     except Exception as e:
@@ -488,6 +523,12 @@ elif menu == "League Info":
         st.error(
             f"Error loading league info: {e}"
         )
+
+
+
+        
+
+            
 
         
         
