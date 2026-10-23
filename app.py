@@ -1545,11 +1545,50 @@ elif menu == "Transfer Activity":
 
     st.title("🔄 Transfer Activity")
 
-    entry_id = st.number_input(
-        "FPL Team ID",
-        min_value=1,
-        step=1
+    LEAGUE_ID = 147447
+
+    lookup_method = st.radio(
+        "Lookup Method",
+        [
+            "Team Name",
+            "FPL Team ID"
+        ],
+        horizontal=True
     )
+
+    if lookup_method == "Team Name":
+
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        standings = pd.DataFrame(
+            league["standings"]["results"]
+        )
+
+        team_options = sorted(
+            standings["entry_name"].tolist()
+        )
+
+        selected_team = st.selectbox(
+            "🏆 Select Team",
+            team_options
+        )
+
+        entry_id = standings.loc[
+            standings["entry_name"]
+            == selected_team,
+            "entry"
+        ].iloc[0]
+
+    else:
+
+        entry_id = st.number_input(
+            "FPL Team ID",
+            min_value=1,
+            step=1
+        )
 
     if entry_id:
 
@@ -1604,21 +1643,6 @@ elif menu == "Transfer Activity":
                 ) / 10
             )
 
-            transfers_data = requests.get(
-                f"https://fantasy.premierleague.com/api/entry/{entry_id}/transfers/",
-                timeout=20
-            ).json()
-
-            gw_transfers = [
-                t
-                for t in transfers_data
-                if t["event"] == selected_gw
-            ]
-
-            st.subheader(
-                f"GW{selected_gw} Transfer Activity"
-            )
-
             active_chip = "None"
 
             try:
@@ -1638,7 +1662,22 @@ elif menu == "Transfer Activity":
             except:
                 pass
 
-            col1, col2 = st.columns(2)
+            transfers_data = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/transfers/",
+                timeout=20
+            ).json()
+
+            gw_transfers = [
+                t
+                for t in transfers_data
+                if t["event"] == selected_gw
+            ]
+
+            st.subheader(
+                f"GW{selected_gw} Transfer Activity"
+            )
+
+            col1, col2, col3 = st.columns(3)
 
             with col1:
                 st.metric(
@@ -1650,6 +1689,12 @@ elif menu == "Transfer Activity":
                 st.metric(
                     "👤 Manager",
                     manager_name
+                )
+
+            with col3:
+                st.metric(
+                    "🆔 Team ID",
+                    entry_id
                 )
 
             col1, col2, col3 = st.columns(3)
@@ -1680,24 +1725,19 @@ elif menu == "Transfer Activity":
 
                     rows.append(
                         {
-                            "Date": transfer[
-                                "time"
-                            ][
-                                :16
-                            ].replace(
-                                "T",
-                                " "
+                            "Date": (
+                                transfer["time"][:16]
+                                .replace(
+                                    "T",
+                                    " "
+                                )
                             ),
                             "OUT": player_lookup.get(
-                                transfer[
-                                    "element_out"
-                                ],
+                                transfer["element_out"],
                                 "Unknown"
                             ),
                             "IN": player_lookup.get(
-                                transfer[
-                                    "element_in"
-                                ],
+                                transfer["element_in"],
                                 "Unknown"
                             )
                         }
@@ -1719,7 +1759,7 @@ elif menu == "Transfer Activity":
                     f"Manager: {manager_name}\n"
                     f"Team ID: {entry_id}\n\n"
                     f"Bank: £{bank:.1f}m\n"
-                    f"Active Chip: {active_chip}\n"
+                    f"Chip: {active_chip}\n"
                     f"Transfers: {len(gw_transfers)}\n\n"
                 )
 
@@ -1750,4 +1790,3 @@ elif menu == "Transfer Activity":
             st.error(
                 f"Error loading transfers: {e}"
             )
-           
