@@ -2703,16 +2703,16 @@ elif menu == "IDX Nexus":
     st.title("📈 IDX NEXUS")
 
     WATCHLIST = [
-        "BBCA.JK",
-        "BBRI.JK",
-        "BMRI.JK",
-        "BBNI.JK",
-        "TLKM.JK",
-        "ASII.JK",
-        "ICBP.JK",
-        "UNVR.JK",
-        "ANTM.JK",
-        "MDKA.JK"
+        "IHSG.JK",
+        "FILM.JK",
+        "SOFA.JK",
+        "BUMI.JK",
+        "IRSX.JK",
+        "NCKL.JK",
+        "COCO.JK",
+        "TOBA.JK",
+        "BUVA.JK",
+        "MBMA.JK"
     ]
 
     idx_menu = st.radio(
