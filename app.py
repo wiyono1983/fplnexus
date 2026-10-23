@@ -146,7 +146,7 @@ elif menu == "League Info":
         st.metric("Status", "Active")
 
         
-  elif menu == "My Team":
+elif menu == "My Team":
 
     st.title("👤 My Team")
 
