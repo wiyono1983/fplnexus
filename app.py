@@ -153,11 +153,23 @@ elif menu == "Statistics":
     st.write("Statistik league.")
 
 elif menu == "Captain Picks":
+
     st.title("🧢 Captain Picks")
-    st.write("Captain terpopuler.")
-  LEAGUE_ID = 147447
+
+    LEAGUE_ID = 147447
 
     try:
+
+        bootstrap = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()
+
+        current_gw = next(
+            e["id"]
+            for e in bootstrap["events"]
+            if e["is_current"]
+        )
 
         league = requests.get(
             f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
@@ -166,55 +178,8 @@ elif menu == "Captain Picks":
 
         entries = league["standings"]["results"]
 
-        gw = requests.get(
-            "https://fantasy.premierleague.com/api/bootstrap-static/",
-            timeout=20
-        ).json()["events"]
-
-        current_gw = next(
-            e["id"]
-            for e in gw
-            if e["is_current"]
-        )
-
-        captain_data = []
-
-        progress = st.progress(0)
-
-        for i, manager in enumerate(entries):
-
-            entry_id = manager["entry"]
-
-            picks = requests.get(
-                f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
-                timeout=20
-            ).json()
-
-            captain_pick = next(
-                p for p in picks["picks"]
-                if p["is_captain"]
-            )
-
-            player_id = captain_pick["element"]
-
-            captain_data.append(
-                {
-                    "Manager": manager["player_name"],
-                    "Captain ID": player_id
-                }
-            )
-
-            progress.progress(
-                (i + 1) / len(entries)
-            )
-
-        teams = requests.get(
-            "https://fantasy.premierleague.com/api/bootstrap-static/",
-            timeout=20
-        ).json()
-
         players = pd.DataFrame(
-            teams["elements"]
+            bootstrap["elements"]
         )
 
         player_lookup = dict(
@@ -224,29 +189,53 @@ elif menu == "Captain Picks":
             )
         )
 
+        captain_data = []
+
+        with st.spinner(
+            "Loading captain picks..."
+        ):
+
+            for manager in entries:
+
+                entry_id = manager["entry"]
+
+                picks = requests.get(
+                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
+                    timeout=20
+                ).json()
+
+                captain = next(
+                    p
+                    for p in picks["picks"]
+                    if p["is_captain"]
+                )
+
+                captain_data.append(
+                    {
+                        "Manager": manager["player_name"],
+                        "Captain": player_lookup.get(
+                            captain["element"],
+                            "Unknown"
+                        )
+                    }
+                )
+
         captain_df = pd.DataFrame(
             captain_data
         )
 
-        captain_df["Captain"] = (
-            captain_df["Captain ID"]
-            .map(player_lookup)
-        )
-
         st.subheader(
-            f"Captain Picks - GW {current_gw}"
+            f"Captain Picks GW {current_gw}"
         )
 
         st.dataframe(
-            captain_df[
-                ["Manager", "Captain"]
-            ],
-            use_container_width=True,
-            hide_index=True
+            captain_df,
+            hide_index=True,
+            use_container_width=True
         )
 
         st.subheader(
-            "Captain Popularity"
+            "Most Selected Captains"
         )
 
         popularity = (
@@ -256,20 +245,26 @@ elif menu == "Captain Picks":
         )
 
         popularity.columns = [
-            "Player",
-            "Managers"
+            "Captain",
+            "Selected"
         ]
 
         st.dataframe(
             popularity,
-            use_container_width=True,
-            hide_index=True
+            hide_index=True,
+            use_container_width=True
         )
 
         st.bar_chart(
             popularity.set_index(
-                "Player"
-            )["Managers"]
+                "Captain"
+            )
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading captain picks: {e}"
         )
 
     except Exception as e:
