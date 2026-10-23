@@ -582,7 +582,7 @@ elif menu == "My Team":
                  key="compare_2"
              )
 
-           if compare_1 != compare_2:
+            if compare_1 != compare_2:
 
               p1 = squad_df[
                 squad_df["Player"] == compare_1
