@@ -211,28 +211,37 @@ elif menu == "Captain Picks":
                 )
 
                 captain_data.append(
-                    {
-                        "Manager": manager["player_name"],
-                        "Captain": player_lookup.get(
-                            captain["element"],
-                            "Unknown"
-                        )
-                    }
-                )
+    {
+        "Team": manager["entry_name"],
+        "Captain": player_lookup.get(
+            captain["element"],
+            "Unknown"
+        ),
+        "Manager": manager["player_name"]
+    }
+)
 
-        captain_df = pd.DataFrame(
-            captain_data
-        )
 
-        st.subheader(
-            f"Captain Picks GW {current_gw}"
-        )
+        captain_df = pd.DataFrame(captain_data)
 
-        st.dataframe(
-            captain_df,
-            hide_index=True,
-            use_container_width=True
-        )
+captain_df = captain_df[
+    [
+        "Team",
+        "Captain",
+        "Manager"
+    ]
+]
+
+st.subheader(
+    f"Captain Picks GW {current_gw}"
+)
+
+st.dataframe(
+    captain_df,
+    hide_index=True,
+    use_container_width=True
+)
+
 
         st.subheader(
             "Most Selected Captains"
