@@ -2774,49 +2774,7 @@ elif menu == "Yahoo Finance Tester":
 
             for field in fields:
 
-                rows.append(
-                    {
-                        "Field": field,
-                        "Value": info.get(
-                            field
-                        )
-                    }
-                )
-
-            df = pd.DataFrame(
-                rows
-            )
-
-            st.dataframe(
-                df,
-                hide_index=True,
-                use_container_width=True
-            )
-
-            hist = stock.history(
-                period="1y"
-            )
-
-            if not hist.empty:
-
-                st.subheader(
-                    "1 Year Price Chart"
-                )
-
-                st.line_chart(
-                    hist["Close"]
-                )
-
-            st.subheader(
-                "Available Keys"
-            )
-
-            st.write(
-                sorted(
-                    list(
-                        info.keys()
-                    )
-                )
+                
             )
 
         except Exception as e:
@@ -2825,188 +2783,7 @@ elif menu == "Yahoo Finance Tester":
                 f"Error: {e}"
             )
 
-
-elif menu == "IDX Nexus":
-
-    import yfinance as yf
-
-    st.title(
-        "📈 IDX Nexus"
-    )
-
-    if (
-        "portfolio"
-        not in st.session_state
-    ):
-
-        st.session_state.portfolio = []
-
-    idx_menu = st.radio(
-        "Module",
-        [
-            "Dashboard",
-            "Stock Detail",
-            "Compare Stocks",
-            "Yahoo Finance Tester"
-        ],
-        horizontal=True
-    )
-    if idx_menu == "Dashboard":
-
-        if not st.session_state.portfolio:
-
-            st.warning(
-                "Add stocks inside MyPorto first."
-            )
-
-        else:
-
-            rows = []
-
-            total_value = 0
-            total_cost = 0
-
-            for p in st.session_state.portfolio:
-
-                try:
-
-                    ticker = (
-                        p["Ticker"]
-                        + ".JK"
-                    )
-
-                    info = yf.Ticker(
-                        ticker
-                    ).info
-
-                    current = (
-                        info.get(
-                            "currentPrice"
-                        ) or 0
-                    )
-
-                    shares = (
-                        p["Lot"]
-                        * 100
-                    )
-
-                    cost = (
-                        p["Avg Buy"]
-                        * shares
-                    )
-
-                    value = (
-                        current
-                        * shares
-                    )
-
-                    pnl = (
-                        value
-                        - cost
-                    )
-
-                    pnl_pct = 0
-
-                    if cost:
-
-                        pnl_pct = round(
-                            pnl
-                            /
-                            cost
-                            * 100,
-                            2
-                        )
-
-                    total_cost += cost
-                    total_value += value
-
-                    rows.append(
-                        {
-                            "Ticker":
-                            p["Ticker"],
-
-                            "Current":
-                            current,
-
-                            "Lot":
-                            p["Lot"],
-
-                            "Avg Buy":
-                            p["Avg Buy"],
-
-                            "P/L":
-                            round(
-                                pnl
-                            ),
-
-                            "P/L %":
-                            pnl_pct
-                        }
-                    )
-
-                except:
-                    pass
-
-            portfolio_df = pd.DataFrame(
-                rows
-            )
-
-            col1,col2,col3 = st.columns(3)
-
-            with col1:
-
-                st.metric(
-                    "Positions",
-                    len(
-                        portfolio_df
-                    )
-                )
-
-            with col2:
-
-                st.metric(
-                    "Portfolio Value",
-                    f"{total_value:,.0f}"
-                )
-
-            with col3:
-
-                st.metric(
-                    "Total Return",
-                    f"{(total_value-total_cost):,.0f}"
-                )
-
-            st.dataframe(
-                portfolio_df,
-                hide_index=True,
-                use_container_width=True
-            )
-    elif idx_menu == "Stock Detail":
-
-        tickers = [
-            p["Ticker"]
-            for p
-            in st.session_state.portfolio
-        ]
-
-        if not tickers:
-
-            st.warning(
-                "Portfolio empty."
-            )
-
-        else:
-
-            selected = st.selectbox(
-                "Stock",
-                tickers
-            )
-
-            info = yf.Ticker(
-                selected + ".JK"
-            ).info
-
-            st.json(info)
+    
 
                         
 elif menu == "MyPorto":
@@ -3192,3 +2969,464 @@ elif menu == "MyPorto":
             file_name="portfolio.csv",
             mime="text/csv"
         )
+
+
+elif menu == "IDX Nexus":
+
+
+    st.title("📈 IDX Nexus")
+
+    portfolio_file = "portfolio.csv"
+
+    if not os.path.exists(
+        portfolio_file
+    ):
+
+        st.warning(
+            "Portfolio belum dibuat. Tambahkan saham di menu MyPorto."
+        )
+
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        portfolio_file
+    )
+
+    if portfolio_df.empty:
+
+        st.warning(
+            "Portfolio kosong."
+        )
+
+        st.stop()
+
+    idx_menu = st.radio(
+        "Module",
+        [
+            "Watchlist",
+            "Stock Detail",
+            "Compare Stocks"
+        ],
+        horizontal=True
+    )
+
+    # ==================================
+    # WATCHLIST
+    # ==================================
+
+    if idx_menu == "Watchlist":
+
+        rows = []
+
+        for _, row in portfolio_df.iterrows():
+
+            try:
+
+                ticker = (
+                    str(
+                        row["Ticker"]
+                    ).upper()
+                    + ".JK"
+                )
+
+                stock = yf.Ticker(
+                    ticker
+                )
+
+                hist = stock.history(
+                    period="5d"
+                )
+
+                if hist.empty:
+                    continue
+
+                current = round(
+                    hist["Close"]
+                    .iloc[-1],
+                    2
+                )
+
+                prev = round(
+                    hist["Close"]
+                    .iloc[-2],
+                    2
+                )
+
+                change_pct = round(
+                    (
+                        (
+                            current
+                            - prev
+                        )
+                        / prev
+                    )
+                    * 100,
+                    2
+                )
+
+                shares = (
+                    row["Lot"]
+                    * 100
+                )
+
+                market_value = (
+                    current
+                    * shares
+                )
+
+                cost_value = (
+                    row["Avg Buy"]
+                    * shares
+                )
+
+                pnl = (
+                    market_value
+                    - cost_value
+                )
+
+                pnl_pct = round(
+                    (
+                        pnl
+                        /
+                        cost_value
+                    )
+                    * 100,
+                    2
+                )
+
+                rows.append(
+                    {
+                        "Ticker":
+                        row["Ticker"],
+
+                        "Lot":
+                        row["Lot"],
+
+                        "Avg Buy":
+                        row["Avg Buy"],
+
+                        "Current":
+                        current,
+
+                        "Day %":
+                        change_pct,
+
+                        "P/L":
+                        round(
+                            pnl
+                        ),
+
+                        "P/L %":
+                        pnl_pct
+                    }
+                )
+
+            except Exception:
+
+                continue
+
+        watchlist_df = pd.DataFrame(
+            rows
+        )
+
+        st.dataframe(
+            watchlist_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        if not watchlist_df.empty:
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+
+                st.metric(
+                    "Stocks",
+                    len(
+                        watchlist_df
+                    )
+                )
+
+            with col2:
+
+                st.metric(
+                    "Top Winner",
+                    watchlist_df
+                    .sort_values(
+                        "P/L %",
+                        ascending=False
+                    )
+                    .iloc[0]["Ticker"]
+                )
+
+            with col3:
+
+                st.metric(
+                    "Top Loser",
+                    watchlist_df
+                    .sort_values(
+                        "P/L %"
+                    )
+                    .iloc[0]["Ticker"]
+                )
+
+    # ==================================
+    # STOCK DETAIL
+    # ==================================
+
+    elif idx_menu == "Stock Detail":
+
+        selected = st.selectbox(
+            "Stock",
+            portfolio_df[
+                "Ticker"
+            ]
+        )
+
+        try:
+
+            stock = yf.Ticker(
+                selected
+                + ".JK"
+            )
+
+            hist = stock.history(
+                period="1y"
+            )
+
+            if hist.empty:
+
+                st.warning(
+                    "Data tidak ditemukan."
+                )
+
+            else:
+
+                current = round(
+                    hist["Close"]
+                    .iloc[-1],
+                    2
+                )
+
+                high52 = round(
+                    hist["High"]
+                    .max(),
+                    2
+                )
+
+                low52 = round(
+                    hist["Low"]
+                    .min(),
+                    2
+                )
+
+                volume = int(
+                    hist["Volume"]
+                    .iloc[-1]
+                )
+
+                col1, col2, col3, col4 = st.columns(
+                    4
+                )
+
+                with col1:
+
+                    st.metric(
+                        "Price",
+                        current
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "52W High",
+                        high52
+                    )
+
+                with col3:
+
+                    st.metric(
+                        "52W Low",
+                        low52
+                    )
+
+                with col4:
+
+                    st.metric(
+                        "Volume",
+                        f"{volume:,}"
+                    )
+
+                st.subheader(
+                    "1 Year Chart"
+                )
+
+                st.line_chart(
+                    hist["Close"]
+                )
+
+                st.subheader(
+                    "Recent Prices"
+                )
+
+                st.dataframe(
+                    hist.tail(30),
+                    use_container_width=True
+                )
+
+        except Exception as e:
+
+            st.error(e)
+
+    # ==================================
+    # COMPARE
+    # ==================================
+
+    elif idx_menu == "Compare Stocks":
+
+        tickers = (
+            portfolio_df[
+                "Ticker"
+            ]
+            .tolist()
+        )
+
+        if len(tickers) < 2:
+
+            st.warning(
+                "Minimal 2 saham."
+            )
+
+        else:
+
+            col1, col2 = st.columns(
+                2
+            )
+
+            with col1:
+
+                stock1 = st.selectbox(
+                    "Stock 1",
+                    tickers
+                )
+
+            with col2:
+
+                stock2 = st.selectbox(
+                    "Stock 2",
+                    tickers,
+                    index=1
+                )
+
+            try:
+
+                hist1 = yf.Ticker(
+                    stock1 + ".JK"
+                ).history(
+                    period="6mo"
+                )
+
+                hist2 = yf.Ticker(
+                    stock2 + ".JK"
+                ).history(
+                    period="6mo"
+                )
+
+                price1 = round(
+                    hist1["Close"]
+                    .iloc[-1],
+                    2
+                )
+
+                price2 = round(
+                    hist2["Close"]
+                    .iloc[-1],
+                    2
+                )
+
+                change1 = round(
+                    (
+                        (
+                            price1
+                            -
+                            hist1["Close"]
+                            .iloc[0]
+                        )
+                        /
+                        hist1["Close"]
+                        .iloc[0]
+                    )
+                    * 100,
+                    2
+                )
+
+                change2 = round(
+                    (
+                        (
+                            price2
+                            -
+                            hist2["Close"]
+                            .iloc[0]
+                        )
+                        /
+                        hist2["Close"]
+                        .iloc[0]
+                    )
+                    * 100,
+                    2
+                )
+
+                compare_df = pd.DataFrame(
+                    [
+                        {
+                            "Metric":
+                            "Price",
+
+                            stock1:
+                            price1,
+
+                            stock2:
+                            price2
+                        },
+                        {
+                            "Metric":
+                            "6M Return %",
+
+                            stock1:
+                            change1,
+
+                            stock2:
+                            change2
+                        }
+                    ]
+                )
+
+                st.dataframe(
+                    compare_df,
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+                chart_df = pd.DataFrame(
+                    {
+                        stock1:
+                        hist1["Close"],
+
+                        stock2:
+                        hist2["Close"]
+                    }
+                )
+
+                st.subheader(
+                    "6 Month Comparison"
+                )
+
+                st.line_chart(
+                    chart_df
+                )
+
+            except Exception as e:
+
+                st.error(e)
+
