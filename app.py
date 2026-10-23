@@ -184,18 +184,18 @@ def show_fixtures():
 # SIDEBAR
 # =========================
 
-Menu = st.sidebar.radio(
+kategori = st.sidebar.radio(
     "Kategori",
     ["Saham", "FPL"]
 )
 
-if Menu == "Saham":
+if kategori == "Saham":
     page = st.sidebar.radio(
         "Menu Saham",
         ["IDX Nexus", "Value Screener", "MyPorto"]
     )
 
-elif Menu == "FPL":
+elif kategori == "FPL":
     page = st.sidebar.radio(
         "Menu FPL",
         [
