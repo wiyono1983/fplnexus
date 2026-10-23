@@ -309,6 +309,322 @@ if menu == "Home":
 
 elif menu == "Fixtures":
     show_fixtures()
+
+elif menu == "My Team":
+
+    st.title("👤 My Team")
+
+    entry_id = st.number_input(
+        "Enter FPL Team ID",
+        min_value=1,
+        step=1
+    )
+
+    if entry_id:
+
+        try:
+
+            bootstrap = requests.get(
+                "https://fantasy.premierleague.com/api/bootstrap-static/",
+                timeout=20
+            ).json()
+
+            current_gw = next(
+                e["id"]
+                for e in bootstrap["events"]
+                if e["is_current"]
+            )
+
+            players = pd.DataFrame(
+                bootstrap["elements"]
+            )
+
+            positions = {
+                1: "GK",
+                2: "DEF",
+                3: "MID",
+                4: "FWD"
+            }
+
+            # Get bank
+            entry_data = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/",
+                timeout=20
+            ).json()
+
+            bank = (
+                entry_data.get(
+                    "last_deadline_bank",
+                    0
+                ) / 10
+            )
+
+            # Squad
+            picks = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
+                timeout=20
+            ).json()
+
+            squad = []
+
+            for p in picks["picks"]:
+
+                player = players[
+                    players["id"] == p["element"]
+                ].iloc[0]
+
+                squad.append(
+                    {
+                        "Player": player["web_name"],
+                        "Position": positions[
+                            player["element_type"]
+                        ],
+                        "Club": player["team"],
+                        "Price": player["now_cost"] / 10,
+                        "Points": player["total_points"],
+                        "Form": float(
+                            player["form"]
+                        ) if player["form"] else 0
+                    }
+                )
+
+            squad_df = pd.DataFrame(
+                squad
+            )
+
+            current_squad = (
+                squad_df["Player"]
+                .tolist()
+            )
+
+            club_counts = (
+                squad_df["Club"]
+                .value_counts()
+                .to_dict()
+            )
+
+            st.subheader(
+                f"My Squad - GW {current_gw}"
+            )
+
+            st.dataframe(
+                squad_df[
+                    [
+                        "Player",
+                        "Position",
+                        "Price",
+                        "Points",
+                        "Form"
+                    ]
+                ],
+                hide_index=True,
+                use_container_width=True
+            )
+
+            st.divider()
+
+            st.subheader(
+                "🔄 Transfer Planner"
+            )
+
+            sell_player = st.selectbox(
+                "Player to Sell",
+                squad_df["Player"]
+            )
+
+            selected = squad_df[
+                squad_df["Player"]
+                == sell_player
+            ].iloc[0]
+
+            # Kurangi kuota klub pemain yg dijual
+            club_counts[
+                selected["Club"]
+            ] -= 1
+
+            available_budget = (
+                selected["Price"]
+                + bank
+            )
+
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                st.metric(
+                    "Player Sold",
+                    sell_player
+                )
+
+            with col2:
+                st.metric(
+                    "Sell Price",
+                    f"£{selected['Price']:.1f}m"
+                )
+
+            with col3:
+                st.metric(
+                    "Bank",
+                    f"£{bank:.1f}m"
+                )
+
+            with col4:
+                st.metric(
+                    "Budget",
+                    f"£{available_budget:.1f}m"
+                )
+
+            pos_map = {
+                "GK": 1,
+                "DEF": 2,
+                "MID": 3,
+                "FWD": 4
+            }
+
+            pos_id = pos_map[
+                selected["Position"]
+            ]
+
+            candidates = players[
+                players["element_type"]
+                == pos_id
+            ].copy()
+
+            candidates["Price"] = (
+                candidates["now_cost"]
+                / 10
+            )
+
+            candidates["Club"] = (
+                candidates["team"]
+            )
+
+            candidates["Form"] = (
+                pd.to_numeric(
+                    candidates["form"],
+                    errors="coerce"
+                ).fillna(0)
+            )
+
+            candidates["Value"] = (
+                candidates["total_points"]
+                / candidates["Price"]
+            ).round(2)
+
+            # Budget filter
+            candidates = candidates[
+                candidates["Price"]
+                <= available_budget
+            ]
+
+            # Exclude existing squad
+            candidates = candidates[
+                ~candidates["web_name"]
+                .isin(current_squad)
+            ]
+
+            # Max 3 players per club
+            candidates = candidates[
+                candidates.apply(
+                    lambda x:
+                    club_counts.get(
+                        x["Club"],
+                        0
+                    ) < 3,
+                    axis=1
+                )
+            ]
+
+            ranking = st.selectbox(
+                "Rank By",
+                [
+                    "Points",
+                    "Form",
+                    "Value"
+                ]
+            )
+
+            if ranking == "Points":
+
+                candidates = (
+                    candidates
+                    .sort_values(
+                        "total_points",
+                        ascending=False
+                    )
+                )
+
+            elif ranking == "Form":
+
+                candidates = (
+                    candidates
+                    .sort_values(
+                        "Form",
+                        ascending=False
+                    )
+                )
+
+            else:
+
+                candidates = (
+                    candidates
+                    .sort_values(
+                        "Value",
+                        ascending=False
+                    )
+                )
+
+            suggestions = candidates[
+                [
+                    "web_name",
+                    "Price",
+                    "total_points",
+                    "Form",
+                    "Value"
+                ]
+            ].head(10)
+
+            suggestions.columns = [
+                "Player",
+                "Price",
+                "Points",
+                "Form",
+                "Value"
+            ]
+
+            st.subheader(
+                f"🔥 Best {selected['Position']} Replacements"
+            )
+
+            st.dataframe(
+                suggestions,
+                hide_index=True,
+                use_container_width=True
+            )
+
+            if not suggestions.empty:
+
+                best = suggestions.iloc[0]
+
+                st.success(
+                    f"✅ Suggested Transfer: "
+                    f"{sell_player} ➜ "
+                    f"{best['Player']} "
+                    f"(£{best['Price']:.1f}m | "
+                    f"{best['Points']} pts)"
+                )
+
+                st.bar_chart(
+                    suggestions.set_index(
+                        "Player"
+                    )["Points"]
+                )
+
+        except Exception as e:
+
+            st.error(
+                f"Error loading team: {e}"
+            )
+
 elif menu == "League Info":
 
     st.title("🏆 League Info")
