@@ -36,84 +36,84 @@ def show_fixtures():
 
        st.title("⚽ FPL Fixtures")
 
-    try:
+       try:
 
-        bootstrap, fixtures = load_data()
+           bootstrap, fixtures = load_data()
 
-        teams = pd.DataFrame(
-            bootstrap["teams"]
-        )
+           teams = pd.DataFrame(
+              bootstrap["teams"]
+           )
 
-        fixture_df = pd.DataFrame(
-            fixtures
-        )
+           fixture_df = pd.DataFrame(
+              fixtures
+           )
 
-        team_lookup = dict(
-            zip(
+           team_lookup = dict(
+             zip(
                 teams["id"],
                 teams["name"]
+             )
+           )
+
+           fixture_df["Home"] = (
+              fixture_df["team_h"]
+              .map(team_lookup)
+           )
+
+           fixture_df["Away"] = (
+              fixture_df["team_a"]
+              .map(team_lookup)
+           )
+
+           fixture_df["kickoff_time"] = (
+               pd.to_datetime(
+                  fixture_df["kickoff_time"],
+                  utc=True,
+                  errors="coerce"
             )
-        )
-
-        fixture_df["Home"] = (
-            fixture_df["team_h"]
-            .map(team_lookup)
-        )
-
-        fixture_df["Away"] = (
-            fixture_df["team_a"]
-            .map(team_lookup)
-        )
-
-        fixture_df["kickoff_time"] = (
-            pd.to_datetime(
-                fixture_df["kickoff_time"],
-                utc=True,
-                errors="coerce"
-            )
-            .dt.tz_convert(
+              .dt.tz_convert(
                 "Asia/Jakarta"
-            )
-        )
+              )
+           )
 
-        gw_list = sorted(
-            fixture_df["event"]
-            .dropna()
-            .unique()
-        )
+           gw_list = sorted(
+              fixture_df["event"]
+              .dropna()
+              .unique()
+           )
 
-        gw = st.selectbox(
-            "Gameweek",
-            gw_list
-        )
+           gw = st.selectbox(
+              "Gameweek",
+              gw_list
+           )
 
-        gw_df = fixture_df[
-            fixture_df["event"] == gw
-        ].copy()
+           gw_df = fixture_df[
+              fixture_df["event"] == gw
+           ].copy()
 
-        st.subheader(
-            f"Gameweek {gw}"
-        )
+           st.subheader(
+              f"Gameweek {gw}"
+           )
 
-        start_date = (
-            gw_df["kickoff_time"]
-            .min()
-            .strftime("%d %b")
-        )
+           start_date = (
+              gw_df["kickoff_time"]
+              .min()
+              .strftime("%d %b")
+           )
 
-        end_date = (
-            gw_df["kickoff_time"]
-            .max()
-            .strftime("%d %b %Y")
-        )
+           end_date = (
+              gw_df["kickoff_time"]
+              .max()
+              .strftime("%d %b %Y")
+           )
 
-        st.caption(
-            f"{start_date} - {end_date}"
-        )
+           st.caption(
+              f"{start_date} - {end_date}"
+           )
 
-        now = pd.Timestamp.now(
-            tz="Asia/Jakarta"
-        )
+           now = pd.Timestamp.now(
+              tz="Asia/Jakarta"
+           )
 
         def get_status(row):
 
