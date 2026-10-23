@@ -508,13 +508,28 @@ elif page == "Fixtures":
 
             for _, row in gw_df.iterrows():
 
-                kickoff = row[
-                    "kickoff_time"
-                ].strftime("%H:%M")
+    kickoff = row[
+        "kickoff_time"
+    ].strftime("%H:%M")
 
-                home = row["Home Team"]
-                away = row["Away Team"]
+    col1, col2, col3 = st.columns(
+        [4, 2, 4]
+    )
 
-                st.write(
-                    f"{home:<20} {kickoff} {away}"
-                )
+    with col1:
+        st.markdown(
+            f"<div style='text-align:right'>{row['Home Team']}</div>",
+            unsafe_allow_html=True
+        )
+
+    with col2:
+        st.markdown(
+            f"<div style='text-align:center'><b>{kickoff}</b></div>",
+            unsafe_allow_html=True
+        )
+
+    with col3:
+        st.markdown(
+            f"<div style='text-align:left'>{row['Away Team']}</div>",
+            unsafe_allow_html=True
+        )
