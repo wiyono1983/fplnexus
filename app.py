@@ -447,13 +447,15 @@ elif page == "Rank History":
 # =========================
 # FIXTURES
 # =========================
-  elif page == "Fixtures":
+elif page == "Fixtures":
 
     st.title("📅 Fixtures")
 
     fixture_data = get_fixtures()
 
-    if fixture_data:
+    if not fixture_data:
+        st.warning("Fixture data tidak tersedia.")
+    else:
 
         fixture_df = pd.DataFrame(fixture_data)
 
@@ -482,16 +484,20 @@ elif page == "Rank History":
             fixture_df["event"] == selected_gw
         ].copy()
 
-        # Ambil rentang tanggal GW
-        gw_dates = pd.to_datetime(
+        gw_df["kickoff_time"] = pd.to_datetime(
             gw_df["kickoff_time"]
         )
 
-        start_date = gw_dates.min().strftime("%d %b")
-        end_date = gw_dates.max().strftime("%d %b %Y")
+        start_date = gw_df[
+            "kickoff_time"
+        ].min().strftime("%d %b")
 
-        st.markdown(
-            f"## Gameweek {selected_gw}"
+        end_date = gw_df[
+            "kickoff_time"
+        ].max().strftime("%d %b %Y")
+
+        st.subheader(
+            f"Gameweek {selected_gw}"
         )
 
         st.caption(
@@ -502,27 +508,13 @@ elif page == "Rank History":
 
             for _, row in gw_df.iterrows():
 
-                kickoff = pd.to_datetime(
-                    row["kickoff_time"]
-                ).strftime("%H:%M")
+                kickoff = row[
+                    "kickoff_time"
+                ].strftime("%H:%M")
 
-                col1, col2, col3 = st.columns(
-                    [5, 2, 5]
+                home = row["Home Team"]
+                away = row["Away Team"]
+
+                st.write(
+                    f"{home:<20} {kickoff} {away}"
                 )
-
-                with col1:
-                    st.write(
-                        row["Home Team"]
-                    )
-
-                with col2:
-                    st.markdown(
-                        f"**{kickoff}**"
-                    )
-
-                with col3:
-                    st.write(
-                        row["Away Team"]
-                    )
-
-
