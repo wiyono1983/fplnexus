@@ -3012,11 +3012,11 @@ elif menu == "IDX Nexus":
             "💰 Value Screener"
           )
 
-           portfolio_df = pd.read_csv(
+          portfolio_df = pd.read_csv(
                "portfolio.csv"
           )
 
-           rows = []
+          rows = []
 
     for _, row in portfolio_df.iterrows():
 
