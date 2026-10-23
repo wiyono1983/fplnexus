@@ -52,10 +52,14 @@ try:
         fixture_df["team_a"].map(team_lookup)
     )
 
-    fixture_df["kickoff_time"] = pd.to_datetime(
+    fixture_df["kickoff_time"] = (
+    pd.to_datetime(
         fixture_df["kickoff_time"],
+        utc=True,
         errors="coerce"
     )
+    .dt.tz_convert("Asia/Jakarta")
+)
 
     gw_list = sorted(
         fixture_df["event"]
