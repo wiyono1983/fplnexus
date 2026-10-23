@@ -3167,266 +3167,6 @@ elif menu == "IDX Nexus":
                 st.error(e)
 
             
-elif menu == "MyPorto":
-
-    
-
-    st.title("📁 My Portfolio")
-
-    PORTFOLIO_FILE = "portfolio.csv"
-
-    # Create file first time
-    if not os.path.exists(PORTFOLIO_FILE):
-
-        pd.DataFrame(
-            columns=[
-                "Ticker",
-                "Lot",
-                "Avg Buy"
-            ]
-        ).to_csv(
-            PORTFOLIO_FILE,
-            index=False
-        )
-
-    portfolio_df = pd.read_csv(
-        PORTFOLIO_FILE
-    )
-
-    # Fix datatypes
-    if not portfolio_df.empty:
-
-        portfolio_df["Lot"] = pd.to_numeric(
-            portfolio_df["Lot"],
-            errors="coerce"
-        ).fillna(0).astype(int)
-
-        portfolio_df["Avg Buy"] = pd.to_numeric(
-            portfolio_df["Avg Buy"],
-            errors="coerce"
-        ).fillna(0).astype(float)
-
-    st.subheader(
-        "➕ Add / Update Position"
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-
-        ticker = st.text_input(
-            "Ticker",
-            placeholder="BBCA"
-        )
-
-    with col2:
-
-        lot = st.number_input(
-            "Lot",
-            min_value=1,
-            value=100
-        )
-
-    with col3:
-
-        avg_buy = st.number_input(
-            "Buy Price",
-            min_value=1.0,
-            value=1000.0,
-            step=1.0
-        )
-
-    if st.button(
-        "Save Position"
-    ):
-
-        ticker = (
-            ticker.upper()
-            .strip()
-        )
-
-        if ticker:
-
-            existing = portfolio_df[
-                portfolio_df["Ticker"]
-                == ticker
-            ]
-
-            # Stock already exists
-            if not existing.empty:
-
-                old_lot = int(
-                    existing.iloc[0]["Lot"]
-                )
-
-                old_avg = float(
-                    existing.iloc[0]["Avg Buy"]
-                )
-
-                total_lot = (
-                    old_lot + lot
-                )
-
-                new_avg = (
-                    (
-                        old_lot
-                        * old_avg
-                    )
-                    +
-                    (
-                        lot
-                        * avg_buy
-                    )
-                ) / total_lot
-
-                portfolio_df.loc[
-                    portfolio_df["Ticker"]
-                    == ticker,
-                    "Lot"
-                ] = int(
-                    total_lot
-                )
-
-                portfolio_df.loc[
-                    portfolio_df["Ticker"]
-                    == ticker,
-                    "Avg Buy"
-                ] = float(
-                    round(
-                        new_avg,
-                        2
-                    )
-                )
-
-                portfolio_df.to_csv(
-                    PORTFOLIO_FILE,
-                    index=False
-                )
-
-                st.success(
-                    f"""
-Updated {ticker}
-
-Lot :
-{total_lot}
-
-Average Buy :
-{round(new_avg,2)}
-"""
-                )
-
-            else:
-
-                new_row = pd.DataFrame(
-                    [
-                        {
-                            "Ticker":
-                            ticker,
-
-                            "Lot":
-                            int(lot),
-
-                            "Avg Buy":
-                            float(avg_buy)
-                        }
-                    ]
-                )
-
-                portfolio_df = pd.concat(
-                    [
-                        portfolio_df,
-                        new_row
-                    ],
-                    ignore_index=True
-                )
-
-                portfolio_df.to_csv(
-                    PORTFOLIO_FILE,
-                    index=False
-                )
-
-                st.success(
-                    f"{ticker} added."
-                )
-
-            st.rerun()
-
-    st.divider()
-
-    st.subheader(
-        "📊 Holdings"
-    )
-
-    portfolio_df = pd.read_csv(
-        PORTFOLIO_FILE
-    )
-
-    if portfolio_df.empty:
-
-        st.info(
-            "Portfolio is empty."
-        )
-
-    else:
-
-        st.metric(
-            "Total Stocks",
-            len(portfolio_df)
-        )
-
-        st.dataframe(
-            portfolio_df.sort_values(
-                "Ticker"
-            ),
-            hide_index=True,
-            use_container_width=True
-        )
-
-        st.divider()
-
-        st.subheader(
-            "🗑 Delete Stock"
-        )
-
-        delete_ticker = st.selectbox(
-            "Select Stock",
-            portfolio_df[
-                "Ticker"
-            ]
-        )
-
-        if st.button(
-            "Delete Stock"
-        ):
-
-            portfolio_df = portfolio_df[
-                portfolio_df["Ticker"]
-                != delete_ticker
-            ]
-
-            portfolio_df.to_csv(
-                PORTFOLIO_FILE,
-                index=False
-            )
-
-            st.success(
-                f"{delete_ticker} deleted."
-            )
-
-            st.rerun()
-
-        st.divider()
-
-        st.download_button(
-            label="📥 Download Portfolio CSV",
-            data=portfolio_df.to_csv(
-                index=False
-            ),
-            file_name="portfolio.csv",
-            mime="text/csv"
-        )
-
-
 elif menu == "Value Screener":
 
     st.title("💰 Value Screener")
@@ -3661,3 +3401,233 @@ elif menu == "Value Screener":
         )
 
                         
+elif menu == "MyPorto":
+
+    st.title("📁 My Portfolio")
+
+    PORTFOLIO_FILE = "portfolio.csv"
+
+    # Create file first time
+    if not os.path.exists(PORTFOLIO_FILE):
+
+        pd.DataFrame(
+            columns=[
+                "Ticker",
+                "Lot",
+                "Avg Buy"
+            ]
+        ).to_csv(
+            PORTFOLIO_FILE,
+            index=False,
+            float_format="%.2f"
+        )
+
+    portfolio_df = pd.read_csv(PORTFOLIO_FILE)
+
+    if not portfolio_df.empty:
+
+        portfolio_df["Lot"] = pd.to_numeric(
+            portfolio_df["Lot"],
+            errors="coerce"
+        ).fillna(0).astype(int)
+
+        portfolio_df["Avg Buy"] = pd.to_numeric(
+            portfolio_df["Avg Buy"],
+            errors="coerce"
+        ).fillna(0).astype(float)
+
+    st.subheader("➕ Add / Update Position")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        ticker = st.text_input(
+            "Ticker",
+            placeholder="BBCA"
+        )
+
+    with col2:
+
+        lot = st.number_input(
+            "Lot",
+            min_value=1,
+            value=100
+        )
+
+    with col3:
+
+        avg_buy = st.number_input(
+            "Buy Price",
+            min_value=0.01,
+            value=1000.00,
+            step=0.01,
+            format="%.2f"
+        )
+
+    if st.button("Save Position"):
+
+        ticker = ticker.upper().strip()
+
+        if ticker:
+
+            existing = portfolio_df[
+                portfolio_df["Ticker"] == ticker
+            ]
+
+            if not existing.empty:
+
+                old_lot = int(
+                    existing.iloc[0]["Lot"]
+                )
+
+                old_avg = float(
+                    existing.iloc[0]["Avg Buy"]
+                )
+
+                total_lot = old_lot + lot
+
+                new_avg = (
+                    (old_lot * old_avg)
+                    +
+                    (lot * avg_buy)
+                ) / total_lot
+
+                portfolio_df.loc[
+                    portfolio_df["Ticker"] == ticker,
+                    "Lot"
+                ] = total_lot
+
+                portfolio_df.loc[
+                    portfolio_df["Ticker"] == ticker,
+                    "Avg Buy"
+                ] = round(new_avg, 2)
+
+                portfolio_df.to_csv(
+                    PORTFOLIO_FILE,
+                    index=False,
+                    float_format="%.2f"
+                )
+
+                st.success(
+                    f"""
+✅ Updated {ticker}
+
+Total Lot : {total_lot}
+
+Average Buy : {new_avg:.2f}
+"""
+                )
+
+            else:
+
+                new_row = pd.DataFrame([
+                    {
+                        "Ticker": ticker,
+                        "Lot": int(lot),
+                        "Avg Buy": round(
+                            float(avg_buy),
+                            2
+                        )
+                    }
+                ])
+
+                portfolio_df = pd.concat(
+                    [
+                        portfolio_df,
+                        new_row
+                    ],
+                    ignore_index=True
+                )
+
+                portfolio_df.to_csv(
+                    PORTFOLIO_FILE,
+                    index=False,
+                    float_format="%.2f"
+                )
+
+                st.success(
+                    f"{ticker} added."
+                )
+
+            st.rerun()
+
+    st.divider()
+
+    st.subheader("📊 Holdings")
+
+    portfolio_df = pd.read_csv(PORTFOLIO_FILE)
+
+    if portfolio_df.empty:
+
+        st.info("Portfolio is empty.")
+
+    else:
+
+        portfolio_df["Avg Buy"] = pd.to_numeric(
+            portfolio_df["Avg Buy"],
+            errors="coerce"
+        ).round(2)
+
+        display_df = portfolio_df.copy()
+
+        display_df["Avg Buy"] = display_df[
+            "Avg Buy"
+        ].map(
+            lambda x: f"{x:.2f}"
+        )
+
+        st.metric(
+            "Total Stocks",
+            len(display_df)
+        )
+
+        st.dataframe(
+            display_df.sort_values(
+                "Ticker"
+            ),
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        st.subheader("🗑 Delete Stock")
+
+        delete_ticker = st.selectbox(
+            "Select Stock",
+            portfolio_df["Ticker"]
+        )
+
+        if st.button("Delete Stock"):
+
+            portfolio_df = portfolio_df[
+                portfolio_df["Ticker"]
+                != delete_ticker
+            ]
+
+            portfolio_df.to_csv(
+                PORTFOLIO_FILE,
+                index=False,
+                float_format="%.2f"
+            )
+
+            st.success(
+                f"{delete_ticker} deleted."
+            )
+
+            st.rerun()
+
+        st.divider()
+
+        csv_data = portfolio_df.to_csv(
+            index=False,
+            float_format="%.2f"
+        )
+
+        st.download_button(
+            label="📥 Download Portfolio CSV",
+            data=csv_data,
+            file_name="portfolio.csv",
+            mime="text/csv"
+        )
