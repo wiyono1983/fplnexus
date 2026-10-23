@@ -196,7 +196,8 @@ menu = st.sidebar.radio(
         "Rival Analyzer",
         "Transfer Activity",
         "Transfer Trends",
-        "IDX Nexus"
+        "IDX Nexus",
+        "Yahoo Finance Tester"
     ]
 )
 
@@ -3084,3 +3085,129 @@ elif menu == "IDX Nexus":
                 st.error(
                     f"Error: {e}"
                 )
+
+elif menu == "Yahoo Finance Tester":
+
+    import yfinance as yf
+
+    st.title("🔍 Yahoo Finance Tester")
+
+    kode = st.text_input(
+        "Kode Saham IDX",
+        "BBCA"
+    )
+
+    if kode:
+
+        ticker = (
+            kode.upper()
+            .replace(".JK","")
+            + ".JK"
+        )
+
+        try:
+
+            stock = yf.Ticker(
+                ticker
+            )
+
+            info = stock.info
+
+            st.success(
+                f"Ticker ditemukan: {ticker}"
+            )
+
+            st.subheader(
+                "Raw Data"
+            )
+
+            rows = []
+
+            fields = [
+                "longName",
+                "currentPrice",
+                "previousClose",
+                "open",
+                "dayLow",
+                "dayHigh",
+                "fiftyTwoWeekLow",
+                "fiftyTwoWeekHigh",
+                "marketCap",
+                "sharesOutstanding",
+                "volume",
+                "averageVolume",
+                "trailingPE",
+                "forwardPE",
+                "priceToBook",
+                "dividendYield",
+                "returnOnEquity",
+                "returnOnAssets",
+                "grossMargins",
+                "operatingMargins",
+                "profitMargins",
+                "totalRevenue",
+                "ebitda",
+                "netIncomeToCommon",
+                "freeCashflow",
+                "totalCash",
+                "totalDebt",
+                "bookValue",
+                "beta",
+                "sector",
+                "industry",
+                "country"
+            ]
+
+            for field in fields:
+
+                rows.append(
+                    {
+                        "Field": field,
+                        "Value": info.get(
+                            field
+                        )
+                    }
+                )
+
+            df = pd.DataFrame(
+                rows
+            )
+
+            st.dataframe(
+                df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+            hist = stock.history(
+                period="1y"
+            )
+
+            if not hist.empty:
+
+                st.subheader(
+                    "1 Year Price Chart"
+                )
+
+                st.line_chart(
+                    hist["Close"]
+                )
+
+            st.subheader(
+                "Available Keys"
+            )
+
+            st.write(
+                sorted(
+                    list(
+                        info.keys()
+                    )
+                )
+            )
+
+        except Exception as e:
+
+            st.error(
+                f"Error: {e}"
+            )
+
