@@ -471,14 +471,13 @@ fixture_df["Home Team"] = (
     .map(team_lookup)
 )
 
-fixture_df["Away Team"] = (
-    fixture_df["team_a"]
-    .map(team_lookup)
-)
-
-       
+        fixture_df["Away Team"] = (
+            fixture_df["team_a"]
+            .map(team_lookup)
+        )
 
         st.dataframe(
+
     fixture_df[
         [
             "event",
