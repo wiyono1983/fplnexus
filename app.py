@@ -190,7 +190,8 @@ menu = st.sidebar.radio(
         "Standings",
         "Statistics",
         "Captain Picks",
-        "Transfer Activity"
+        "Transfer Activity",
+        "Transfer Trends"
     ]
 )
 
@@ -1862,3 +1863,207 @@ elif menu == "Transfer Activity":
             st.error(
                 f"Error loading transfers: {e}"
             )
+
+elif menu == "Transfer Trends":
+
+    st.title("🔥 Transfer Trends")
+
+    LEAGUE_ID = 147447
+
+    try:
+
+        bootstrap = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()
+
+        players = pd.DataFrame(
+            bootstrap["elements"]
+        )
+
+        player_lookup = dict(
+            zip(
+                players["id"],
+                players["web_name"]
+            )
+        )
+
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        standings = pd.DataFrame(
+            league["standings"]["results"]
+        )
+
+        current_gw = next(
+            e["id"]
+            for e in bootstrap["events"]
+            if e["is_current"]
+        )
+
+        selected_gw = st.selectbox(
+            "Gameweek",
+            list(range(1, current_gw + 2))
+        )
+
+        transfers_in = []
+        transfers_out = []
+
+        latest_transfers = []
+
+        progress = st.progress(0)
+
+        for idx, row in standings.iterrows():
+
+            try:
+
+                entry_id = row["entry"]
+
+                transfers = requests.get(
+                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/transfers/",
+                    timeout=20
+                ).json()
+
+                gw_transfers = [
+                    t
+                    for t in transfers
+                    if t["event"] == selected_gw
+                ]
+
+                for t in gw_transfers:
+
+                    player_in = player_lookup.get(
+                        t["element_in"],
+                        "Unknown"
+                    )
+
+                    player_out = player_lookup.get(
+                        t["element_out"],
+                        "Unknown"
+                    )
+
+                    transfers_in.append(
+                        player_in
+                    )
+
+                    transfers_out.append(
+                        player_out
+                    )
+
+                    latest_transfers.append(
+                        {
+                            "Team": row["entry_name"],
+                            "Manager": row["player_name"],
+                            "OUT": player_out,
+                            "IN": player_in,
+                            "Time": t["time"]
+                        }
+                    )
+
+                progress.progress(
+                    (idx + 1)
+                    / len(standings)
+                )
+
+            except:
+                pass
+
+        progress.empty()
+
+        st.subheader(
+            f"Most Bought GW{selected_gw}"
+        )
+
+        bought_df = (
+            pd.Series(
+                transfers_in
+            )
+            .value_counts()
+            .reset_index()
+        )
+
+        bought_df.columns = [
+            "Player",
+            "Bought"
+        ]
+
+        st.dataframe(
+            bought_df.head(10),
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.bar_chart(
+            bought_df.head(10)
+            .set_index("Player")
+            ["Bought"]
+        )
+
+        st.divider()
+
+        st.subheader(
+            f"Most Sold GW{selected_gw}"
+        )
+
+        sold_df = (
+            pd.Series(
+                transfers_out
+            )
+            .value_counts()
+            .reset_index()
+        )
+
+        sold_df.columns = [
+            "Player",
+            "Sold"
+        ]
+
+        st.dataframe(
+            sold_df.head(10),
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.bar_chart(
+            sold_df.head(10)
+            .set_index("Player")
+            ["Sold"]
+        )
+
+        st.divider()
+
+        st.subheader(
+            "Latest Transfers"
+        )
+
+        if latest_transfers:
+
+            latest_df = pd.DataFrame(
+                latest_transfers
+            )
+
+            latest_df = latest_df.sort_values(
+                "Time",
+                ascending=False
+            )
+
+            st.dataframe(
+                latest_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+        else:
+
+            st.info(
+                "No transfers found."
+            )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading trends: {e}"
+        )
+
