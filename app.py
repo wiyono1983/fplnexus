@@ -185,7 +185,7 @@ def show_fixtures():
                use_container_width=True
             )
 
-            except Exception as e:
+        except Exception as e:
 
               st.error(
                 f"Error: {e}"
