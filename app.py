@@ -3558,75 +3558,53 @@ elif menu == "Statistics":
 
     try:
 
-        bootstrap = requests.get(
-            "https://fantasy.premierleague.com/api/bootstrap-static/",
-            timeout=20
-        ).json()
-
-        players = pd.DataFrame(
-            bootstrap["elements"]
-        )
-
-        stat_options = {
-            "Goals": "goals_scored",
-            "Assists": "assists",
-            "Clean Sheets": "clean_sheets",
-            "Minutes": "minutes",
-            "Bonus Points": "bonus",
-            "ICT Index": "ict_index",
-            "Influence": "influence",
-            "Creativity": "creativity",
-            "Threat": "threat",
-            "Dream Team": "dreamteam_count",
-            "Yellow Cards": "yellow_cards",
-            "Red Cards": "red_cards",
-            "Saves": "saves",
-            "DefCon": "clearances_blocks_interceptions"
-        }
-
-        selected_stat = st.selectbox(
+        stat_choice = st.selectbox(
             "Select Statistic",
-            list(stat_options.keys())
+            [
+                "Goals",
+                "Assists",
+                "Clean Sheets",
+                "Minutes",
+                "Bonus Points",
+                "ICT Index",
+                "Influence",
+                "Creativity",
+                "Threat",
+                "Dream Team",
+                "Yellow Cards",
+                "Red Cards",
+                "Saves",
+                "DefCon"
+            ]
         )
 
-        stat_col = stat_options[
-            selected_stat
-        ]
+        if stat_choice == "DefCon":
 
-        if selected_stat == "DefCon":
+            url = (
+                "https://fpldraft.me/"
+                "fpl-defensive-contributions"
+            )
 
-            players["DefCon"] = pd.to_numeric(
-                players[
-                    "clearances_blocks_interceptions"
-                ],
-                errors="coerce"
-            ).fillna(0)
+            tables = pd.read_html(url)
 
-            stats_df = players[
-                [
-                    "web_name",
-                    "minutes",
-                    "DefCon"
-                ]
+            defcon_df = tables[0].copy()
+
+            player_col = defcon_df.columns[0]
+            points_col = defcon_df.columns[-1]
+
+            stats_df = defcon_df[
+                [player_col, points_col]
             ].copy()
 
             stats_df.columns = [
                 "Player",
-                "Minutes",
                 "DefCon"
             ]
 
-            stats_df = stats_df[
-                stats_df["Minutes"] >= 300
-            ]
-
-            stats_df = stats_df.sort_values(
-                "DefCon",
-                ascending=False
-            ).head(10)
+            stats_df = stats_df.head(10)
 
             st.subheader(
-                "🛡️ Top 10 Defensive Contribution"
+                "🛡️ Top 10 DefCon"
             )
 
             st.dataframe(
@@ -3635,9 +3613,7 @@ elif menu == "Statistics":
                 use_container_width=True
             )
 
-            st.divider()
-
-            whatsapp_text = (
+            wa_text = (
                 "🛡️ FPL NEXUS DEFCON TOP 5\n\n"
             )
 
@@ -3646,10 +3622,10 @@ elif menu == "Statistics":
                 start=1
             ):
 
-                whatsapp_text += (
+                wa_text += (
                     f"{i}. "
                     f"{row.Player} "
-                    f"({int(row.DefCon)})\n"
+                    f"({row.DefCon})\n"
                 )
 
             st.subheader(
@@ -3657,11 +3633,40 @@ elif menu == "Statistics":
             )
 
             st.code(
-                whatsapp_text,
+                wa_text,
                 language="text"
             )
 
         else:
+
+            bootstrap = requests.get(
+                "https://fantasy.premierleague.com/api/bootstrap-static/",
+                timeout=20
+            ).json()
+
+            players = pd.DataFrame(
+                bootstrap["elements"]
+            )
+
+            stat_map = {
+                "Goals": "goals_scored",
+                "Assists": "assists",
+                "Clean Sheets": "clean_sheets",
+                "Minutes": "minutes",
+                "Bonus Points": "bonus",
+                "ICT Index": "ict_index",
+                "Influence": "influence",
+                "Creativity": "creativity",
+                "Threat": "threat",
+                "Dream Team": "dreamteam_count",
+                "Yellow Cards": "yellow_cards",
+                "Red Cards": "red_cards",
+                "Saves": "saves"
+            }
+
+            stat_col = stat_map[
+                stat_choice
+            ]
 
             stats_df = players[
                 [
@@ -3672,16 +3677,16 @@ elif menu == "Statistics":
 
             stats_df.columns = [
                 "Player",
-                selected_stat
+                stat_choice
             ]
 
             stats_df = stats_df.sort_values(
-                selected_stat,
+                stat_choice,
                 ascending=False
-            ).head(20)
+            ).head(10)
 
             st.subheader(
-                f"Top 20 - {selected_stat}"
+                f"🏆 Top 10 {stat_choice}"
             )
 
             st.dataframe(
@@ -3690,9 +3695,40 @@ elif menu == "Statistics":
                 use_container_width=True
             )
 
+            wa_text = (
+                f"⚽ FPL NEXUS {stat_choice.upper()} TOP 5\n\n"
+            )
+
+            for i, row in enumerate(
+                stats_df.head(5).itertuples(),
+                start=1
+            ):
+
+                value = getattr(
+                    row,
+                    stat_choice.replace(
+                        " ",
+                        "_"
+                    )
+                )
+
+                wa_text += (
+                    f"{i}. "
+                    f"{row.Player} "
+                    f"({value})\n"
+                )
+
+            st.subheader(
+                "📱 Copy To WhatsApp"
+            )
+
+            st.code(
+                wa_text,
+                language="text"
+            )
+
     except Exception as e:
 
         st.error(
             f"Error loading statistics: {e}"
         )
-
