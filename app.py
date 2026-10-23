@@ -574,10 +574,10 @@ elif menu == "League Info":
                 "Rank": 0.08,
                 "Δ Rank": 0.08,
                 "Team": 0.18,
-                "Points": 0.12,
-                "GW Points": 0.12,
+                "Points": 0.07,
+                "GW Points": 0.07,
                 "Hits": 0.08,
-                "Remaining Chips": 0.22
+                "Remaining Chips": 0.12
             }
 
             col_widths = [
