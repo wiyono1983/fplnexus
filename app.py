@@ -2062,7 +2062,7 @@ elif menu == "Transfer Trends":
                 "No transfers found."
             )
 
- elif menu == "Rival Analyzer":
+elif menu == "Rival Analyzer":
 
     st.title("⚔️ Rival Analyzer")
 
