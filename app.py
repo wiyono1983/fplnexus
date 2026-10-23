@@ -640,8 +640,8 @@ elif menu == "My Team":
                  .iloc[0]
               )
 
-             diff_pool = candidates[
-                candidates["Ownership"] < 10
+                 diff_pool = candidates[
+                     candidates["Ownership"] < 10
              ]
 
            if not diff_pool.empty:
