@@ -3158,6 +3158,7 @@ elif menu == "IDX Nexus":
 
                 st.error(e)
 
+            
 elif menu == "MyPorto":
 
 
@@ -3219,70 +3220,66 @@ elif menu == "MyPorto":
 
         ticker = (
             ticker.upper()
-            .replace(".JK", "")
             .strip()
+            .replace(".JK", "")
         )
 
-        ticker = (
-            ticker + ".JK"
-        )
+        if ticker:
 
-        exists = (
-            portfolio_df[
-                "Ticker"
-            ]
-            .astype(str)
-            .str.upper()
-            .eq(ticker)
-            .any()
-        )
-
-        if exists:
-
-            st.warning(
-                f"{ticker} already exists"
+            exists = (
+                portfolio_df["Ticker"]
+                .astype(str)
+                .str.upper()
+                .eq(ticker)
+                .any()
             )
 
-        else:
+            if exists:
 
-            new_row = pd.DataFrame(
-                [
-                    {
-                        "Ticker":
-                        ticker,
+                st.warning(
+                    f"{ticker} already exists"
+                )
 
-                        "Lot":
-                        lot,
+            else:
 
-                        "Avg Buy":
-                        avg_buy
-                    }
-                ]
-            )
+                new_row = pd.DataFrame(
+                    [
+                        {
+                            "Ticker":
+                            ticker,
 
-            portfolio_df = pd.concat(
-                [
-                    portfolio_df,
-                    new_row
-                ],
-                ignore_index=True
-            )
+                            "Lot":
+                            lot,
 
-            portfolio_df.to_csv(
-                PORTFOLIO_FILE,
-                index=False
-            )
+                            "Avg Buy":
+                            avg_buy
+                        }
+                    ]
+                )
 
-            st.success(
-                f"{ticker} added"
-            )
+                portfolio_df = pd.concat(
+                    [
+                        portfolio_df,
+                        new_row
+                    ],
+                    ignore_index=True
+                )
 
-            st.rerun()
+                portfolio_df.to_csv(
+                    PORTFOLIO_FILE,
+                    index=False
+                )
+
+                st.success(
+                    f"{ticker} added"
+                )
+
+                st.rerun()
 
     st.divider()
 
     st.subheader(
-        "📊 Portfolio Holdings"
+        "📊 Holdings"
     )
 
     if portfolio_df.empty:
@@ -3309,11 +3306,9 @@ elif menu == "MyPorto":
             "🗑 Delete Stock"
         )
 
-        delete_stock = st.selectbox(
-            "Select Stock",
-            portfolio_df[
-                "Ticker"
-            ]
+        delete_ticker = st.selectbox(
+            "Ticker",
+            portfolio_df["Ticker"]
         )
 
         if st.button(
@@ -3321,10 +3316,8 @@ elif menu == "MyPorto":
         ):
 
             portfolio_df = portfolio_df[
-                portfolio_df[
-                    "Ticker"
-                ]
-                != delete_stock
+                portfolio_df["Ticker"]
+                != delete_ticker
             ]
 
             portfolio_df.to_csv(
@@ -3333,18 +3326,17 @@ elif menu == "MyPorto":
             )
 
             st.success(
-                f"{delete_stock} deleted"
+                f"{delete_ticker} deleted"
             )
 
             st.rerun()
 
-        st.divider()
-
         st.download_button(
-            "📥 Download Portfolio CSV",
+            label="📥 Download CSV",
             data=portfolio_df.to_csv(
                 index=False
             ),
             file_name="portfolio.csv",
             mime="text/csv"
         )
+
