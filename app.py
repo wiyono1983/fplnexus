@@ -631,112 +631,112 @@ elif menu == "My Team":
                  .iloc[0]
               )
 
-    value_pick = (
-        candidates
-        .sort_values(
-            "Value",
-            ascending=False
-        )
-        .iloc[0]
-    )
+              value_pick = (
+                 candidates
+                   .sort_values(
+                   "Value",
+                   ascending=False
+                 )
+                 .iloc[0]
+              )
 
-    diff_pool = candidates[
-        candidates["Ownership"] < 10
-    ]
+             diff_pool = candidates[
+                candidates["Ownership"] < 10
+             ]
 
-    if not diff_pool.empty:
+           if not diff_pool.empty:
 
-        diff_pick = (
-            diff_pool
-            .sort_values(
-                "Form",
-                ascending=False
-            )
-            .iloc[0]
-        )
+               diff_pick = (
+                  diff_pool
+                  .sort_values(
+                  "Form",
+                  ascending=False
+                  )
+                  .iloc[0]
+               )
 
-    else:
+           else:
 
-        diff_pick = form_pick
+              diff_pick = form_pick
 
-    recommended = form_pick
+              recommended = form_pick
 
-    remaining_budget = (
-        available_budget
-        - recommended["Price"]
-    )
+              remaining_budget = (
+                 available_budget
+                 - recommended["Price"]
+              )
 
-    st.success(
-        f"""
-✅ Suggested Transfer
+                st.success(
+                   f"""
+                ✅ Suggested Transfer
 
-{sell_player}
-➡️
-{recommended['web_name']}
+                {sell_player}
+                ➡️
+                {recommended['web_name']}
 
-Buy Price:
-£{recommended['Price']:.1f}m
+                Buy Price:
+                £{recommended['Price']:.1f}m
 
-Remaining Budget:
-£{remaining_budget:.1f}m
-"""
-    )
+                Remaining Budget:
+                £{remaining_budget:.1f}m
+                """
+                )
 
-    report = f"""
-⚽ FPL NEXUS TRANSFER REPORT
+                   report = f"""
+                ⚽ FPL NEXUS TRANSFER REPORT
 
-SELL PLAYER
-❌ {sell_player}
+                SELL PLAYER
+                ❌ {sell_player}
 
-Sell Price: £{selected['Price']:.1f}m
-Current Bank: £{bank:.1f}m
-Available Budget: £{available_budget:.1f}m
+                Sell Price: £{selected['Price']:.1f}m
+                Current Bank: £{bank:.1f}m
+                Available Budget: £{available_budget:.1f}m
 
-🏆 POINTS PICK
-{points_pick['web_name']}
-{points_pick['total_points']} pts
+                🏆 POINTS PICK
+                {points_pick['web_name']}
+                {points_pick['total_points']} pts
 
-🔥 FORM PICK
-{form_pick['web_name']}
-Form {form_pick['Form']}
+                🔥 FORM PICK
+                {form_pick['web_name']}
+                Form {form_pick['Form']}
 
-💰 VALUE PICK
-{value_pick['web_name']}
-Value {value_pick['Value']}
+                💰 VALUE PICK
+                {value_pick['web_name']}
+                Value {value_pick['Value']}
 
-🎯 DIFFERENTIAL PICK
-{diff_pick['web_name']}
-Ownership {diff_pick['Ownership']}%
+                🎯 DIFFERENTIAL PICK
+                {diff_pick['web_name']}
+                 Ownership {diff_pick['Ownership']}%
 
-✅ RECOMMENDED TRANSFER
+                ✅ RECOMMENDED TRANSFER
 
-OUT:
-{sell_player}
+                OUT:
+                {sell_player}
 
-IN:
-{recommended['web_name']}
+                IN:
+                {recommended['web_name']}
 
-Buy Price:
-£{recommended['Price']:.1f}m
+                Buy Price:
+                £{recommended['Price']:.1f}m
 
-Remaining Budget:
-£{remaining_budget:.1f}m
-"""
+                Remaining Budget:
+                £{remaining_budget:.1f}m
+                """
 
-    st.subheader(
-        "📱 Copy To WhatsApp"
-    )
-
-    st.code(
-        report,
-        language="text"
-    )
-
-    st.bar_chart(
-        suggestions.set_index(
-            "Player"
-        )["Points"]
-    )
+                st.subheader(
+                   "📱 Copy To WhatsApp"
+                )
+ 
+                st.code(
+                    report,
+                    language="text"
+                )
+ 
+                st.bar_chart(
+                   suggestions.set_index(
+                      "Player"
+                   )["Points"]
+                )
 
 
         except Exception as e:
