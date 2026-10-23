@@ -143,14 +143,14 @@ def show_fixtures():
                    "%H:%M"
                )
 
-            gw_df["Kick Off"] = (
+           gw_df["Kick Off"] = (
                gw_df.apply(
                   get_status,
                   axis=1
                )
             )
 
-            gw_df["Score"] = gw_df.apply(
+           gw_df["Score"] = gw_df.apply(
                lambda x:
                f"{int(x['team_h_score'])}-{int(x['team_a_score'])}"
                if pd.notna(
@@ -163,7 +163,7 @@ def show_fixtures():
                axis=1
             )
 
-            fixture_view = gw_df[
+           fixture_view = gw_df[
               [
                   "Kick Off",
                   "Home",
@@ -172,14 +172,14 @@ def show_fixtures():
               ]
             ].copy()
 
-            fixture_view.columns = [
+           fixture_view.columns = [
               "Status",
               "Home Team",
               "Score",
               "Away Team"
             ]
 
-            st.dataframe(
+           st.dataframe(
                fixture_view,
                hide_index=True,
                use_container_width=True
