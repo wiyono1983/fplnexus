@@ -230,7 +230,7 @@ elif page == "My Team":
     left_on="element",
     right_on="player_id",
     how="left"
-)
+
 
         )
 
