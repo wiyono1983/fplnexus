@@ -434,8 +434,7 @@ elif menu == "League Info":
                 )
 
                 progress.progress(
-                    (idx + 1) /
-                    len(standings)
+                    (idx + 1) / len(standings)
                 )
 
             except:
@@ -443,47 +442,33 @@ elif menu == "League Info":
 
         progress.empty()
 
-        league_df = pd.DataFrame(
-            members
-        )
+        league_df = pd.DataFrame(members)
 
         display_df = league_df.copy()
 
-        display_df["Δ Rank"] = (
-            display_df["Δ Rank"]
-            .apply(
-                lambda x:
-                f"▲{x}"
-                if x > 0
-                else (
-                    f"▼{abs(x)}"
-                    if x < 0
-                    else "▬"
-                )
+        display_df["Δ Rank"] = display_df["Δ Rank"].apply(
+            lambda x:
+            f"▲{x}" if x > 0
+            else (
+                f"▼{abs(x)}"
+                if x < 0
+                else "▬"
             )
         )
 
-        display_df["Hits"] = (
-            display_df["Hits"]
-            .apply(
-                lambda x:
-                f"-{x}"
-                if x > 0
-                else "0"
-            )
+        display_df["Hits"] = display_df["Hits"].apply(
+            lambda x:
+            f"-{x}"
+            if x > 0
+            else "0"
         )
 
-        display_df["Team Value"] = (
-            display_df["Team Value"]
-            .apply(
-                lambda x:
-                f"£{x:.1f}m"
-            )
+        display_df["Team Value"] = display_df["Team Value"].apply(
+            lambda x:
+            f"£{x:.1f}m"
         )
 
-        st.subheader(
-            "League Members"
-        )
+        st.subheader("League Members")
 
         st.dataframe(
             display_df,
@@ -493,13 +478,9 @@ elif menu == "League Info":
 
         st.divider()
 
-        st.subheader(
-            "🏅 Awards Snapshot"
-        )
+        st.subheader("🏅 Awards Snapshot")
 
-        leader = league_df.sort_values(
-            "Rank"
-        ).iloc[0]
+        leader = league_df.sort_values("Rank").iloc[0]
 
         gw_winner = league_df.sort_values(
             "GW Points",
@@ -555,9 +536,7 @@ elif menu == "League Info":
 
         st.divider()
 
-        st.subheader(
-            "📷 Export League Table"
-        )
+        st.subheader("📷 Export League Table")
 
         selected_columns = st.multiselect(
             "Select Columns",
@@ -575,46 +554,84 @@ elif menu == "League Info":
 
         if selected_columns:
 
-            export_df = display_df[
-                selected_columns
-            ]
+            export_df = display_df[selected_columns]
 
             fig_height = max(
                 2,
                 len(export_df) * 0.45
             )
 
+            fig_width = 14
+
             fig, ax = plt.subplots(
-                figsize=(14, fig_height)
+                figsize=(fig_width, fig_height)
             )
 
             ax.axis("off")
 
+            lengths = []
+
+            for col in export_df.columns:
+
+                max_len = max(
+                    export_df[col]
+                    .astype(str)
+                    .str.len()
+                    .max(),
+                    len(col)
+                )
+
+                lengths.append(max_len)
+
+            total = sum(lengths)
+
+            col_widths = [
+                x / total
+                for x in lengths
+            ]
+
             table = ax.table(
                 cellText=export_df.values,
                 colLabels=export_df.columns,
+                colWidths=col_widths,
                 loc="center"
             )
 
             table.auto_set_font_size(False)
             table.set_fontsize(10)
-            table.scale(1.2, 1.5)
+            table.scale(1, 1.5)
 
-            for (
-                row_id,
-                col_id
-            ), cell in table.get_celld().items():
+            for (row, col), cell in table.get_celld().items():
 
-                if row_id == 0:
+                cell.set_edgecolor("#444444")
+                cell.set_linewidth(0.75)
 
-                    cell.set_facecolor(
-                        "#2E7D32"
-                    )
+                if row == 0:
+
+                    cell.set_facecolor("#2E7D32")
 
                     cell.set_text_props(
                         color="white",
-                        weight="bold"
+                        weight="bold",
+                        ha="center"
                     )
+
+                else:
+
+                    column = export_df.columns[col]
+
+                    if column in [
+                        "Team",
+                        "Manager",
+                        "Remaining Chips"
+                    ]:
+                        cell.set_text_props(
+                            ha="left"
+                        )
+                    else:
+                        cell.set_text_props(
+                            ha="center"
+                        )
 
             plt.tight_layout()
 
@@ -624,14 +641,15 @@ elif menu == "League Info":
                 img_buffer,
                 format="jpg",
                 dpi=300,
-                bbox_inches="tight"
+                bbox_inches="tight",
+                facecolor="white"
             )
 
             img_buffer.seek(0)
 
             st.image(
                 img_buffer,
-                caption="Preview"
+                caption="League Table Preview"
             )
 
             st.download_button(
@@ -648,322 +666,7 @@ elif menu == "League Info":
         st.error(
             f"Error loading league info: {e}"
         )
-
-        
-elif menu == "My Team":
-
-    st.title("👤 My Team")
-
-    entry_id = st.number_input(
-        "Enter FPL Team ID",
-        min_value=1,
-        step=1
-    )
-
-    if entry_id:
-
-        try:
-
-            bootstrap = requests.get(
-                "https://fantasy.premierleague.com/api/bootstrap-static/",
-                timeout=20
-            ).json()
-
-            current_gw = next(
-                e["id"]
-                for e in bootstrap["events"]
-                if e["is_current"]
-            )
-
-            players = pd.DataFrame(
-                bootstrap["elements"]
-            )
-
-            positions = {
-                1: "GK",
-                2: "DEF",
-                3: "MID",
-                4: "FWD"
-            }
-
-            # Get bank
-            entry_data = requests.get(
-                f"https://fantasy.premierleague.com/api/entry/{entry_id}/",
-                timeout=20
-            ).json()
-
-            bank = (
-                entry_data.get(
-                    "last_deadline_bank",
-                    0
-                ) / 10
-            )
-
-            # Squad
-            picks = requests.get(
-                f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
-                timeout=20
-            ).json()
-
-            squad = []
-
-            for p in picks["picks"]:
-
-                player = players[
-                    players["id"] == p["element"]
-                ].iloc[0]
-
-                squad.append(
-                    {
-                        "Player": player["web_name"],
-                        "Position": positions[
-                            player["element_type"]
-                        ],
-                        "Club": player["team"],
-                        "Price": player["now_cost"] / 10,
-                        "Points": player["total_points"],
-                        "Form": float(
-                            player["form"]
-                        ) if player["form"] else 0
-                    }
-                )
-
-            squad_df = pd.DataFrame(
-                squad
-            )
-
-            current_squad = (
-                squad_df["Player"]
-                .tolist()
-            )
-
-            club_counts = (
-                squad_df["Club"]
-                .value_counts()
-                .to_dict()
-            )
-
-            st.subheader(
-                f"My Squad - GW {current_gw}"
-            )
-
-            st.dataframe(
-                squad_df[
-                    [
-                        "Player",
-                        "Position",
-                        "Price",
-                        "Points",
-                        "Form"
-                    ]
-                ],
-                hide_index=True,
-                use_container_width=True
-            )
-
-            st.divider()
-
-            st.subheader(
-                "🔄 Transfer Planner"
-            )
-
-            sell_player = st.selectbox(
-                "Player to Sell",
-                squad_df["Player"]
-            )
-
-            selected = squad_df[
-                squad_df["Player"]
-                == sell_player
-            ].iloc[0]
-
-            # Kurangi kuota klub pemain yg dijual
-            club_counts[
-                selected["Club"]
-            ] -= 1
-
-            available_budget = (
-                selected["Price"]
-                + bank
-            )
-
-            col1, col2, col3, col4 = st.columns(4)
-
-            with col1:
-                st.metric(
-                    "Player Sold",
-                    sell_player
-                )
-
-            with col2:
-                st.metric(
-                    "Sell Price",
-                    f"£{selected['Price']:.1f}m"
-                )
-
-            with col3:
-                st.metric(
-                    "Bank",
-                    f"£{bank:.1f}m"
-                )
-
-            with col4:
-                st.metric(
-                    "Budget",
-                    f"£{available_budget:.1f}m"
-                )
-
-            pos_map = {
-                "GK": 1,
-                "DEF": 2,
-                "MID": 3,
-                "FWD": 4
-            }
-
-            pos_id = pos_map[
-                selected["Position"]
-            ]
-
-            candidates = players[
-                players["element_type"]
-                == pos_id
-            ].copy()
-
-            candidates["Price"] = (
-                candidates["now_cost"]
-                / 10
-            )
-
-            candidates["Club"] = (
-                candidates["team"]
-            )
-
-            candidates["Form"] = (
-                pd.to_numeric(
-                    candidates["form"],
-                    errors="coerce"
-                ).fillna(0)
-            )
-
-            candidates["Value"] = (
-                candidates["total_points"]
-                / candidates["Price"]
-            ).round(2)
-
-            # Budget filter
-            candidates = candidates[
-                candidates["Price"]
-                <= available_budget
-            ]
-
-            # Exclude existing squad
-            candidates = candidates[
-                ~candidates["web_name"]
-                .isin(current_squad)
-            ]
-
-            # Max 3 players per club
-            candidates = candidates[
-                candidates.apply(
-                    lambda x:
-                    club_counts.get(
-                        x["Club"],
-                        0
-                    ) < 3,
-                    axis=1
-                )
-            ]
-
-            ranking = st.selectbox(
-                "Rank By",
-                [
-                    "Points",
-                    "Form",
-                    "Value"
-                ]
-            )
-
-            if ranking == "Points":
-
-                candidates = (
-                    candidates
-                    .sort_values(
-                        "total_points",
-                        ascending=False
-                    )
-                )
-
-            elif ranking == "Form":
-
-                candidates = (
-                    candidates
-                    .sort_values(
-                        "Form",
-                        ascending=False
-                    )
-                )
-
-            else:
-
-                candidates = (
-                    candidates
-                    .sort_values(
-                        "Value",
-                        ascending=False
-                    )
-                )
-
-            suggestions = candidates[
-                [
-                    "web_name",
-                    "Price",
-                    "total_points",
-                    "Form",
-                    "Value"
-                ]
-            ].head(10)
-
-            suggestions.columns = [
-                "Player",
-                "Price",
-                "Points",
-                "Form",
-                "Value"
-            ]
-
-            st.subheader(
-                f"🔥 Best {selected['Position']} Replacements"
-            )
-
-            st.dataframe(
-                suggestions,
-                hide_index=True,
-                use_container_width=True
-            )
-
-            if not suggestions.empty:
-
-                best = suggestions.iloc[0]
-
-                st.success(
-                    f"✅ Suggested Transfer: "
-                    f"{sell_player} ➜ "
-                    f"{best['Player']} "
-                    f"(£{best['Price']:.1f}m | "
-                    f"{best['Points']} pts)"
-                )
-
-                st.bar_chart(
-                    suggestions.set_index(
-                        "Player"
-                    )["Points"]
-                )
-
-        except Exception as e:
-
-            st.error(
-                f"Error loading team: {e}"
-            )
+                    
 
 
 
