@@ -414,7 +414,7 @@ elif menu == "My Team":
             "entry"
         ].iloc[0]
 
-       else:
+    else:
 
         entry_id = st.number_input(
             "FPL Team ID",
