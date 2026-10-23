@@ -476,16 +476,7 @@ fixture_df["Away Team"] = (
     .map(team_lookup)
 )
 
-        cols = [
-            c for c in [
-                "event",
-                "team_h",
-                "team_a",
-                "team_h_difficulty",
-                "team_a_difficulty"
-            ]
-            if c in fixture_df.columns
-        ]
+       
 
         st.dataframe(
     fixture_df[
