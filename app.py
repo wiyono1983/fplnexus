@@ -640,7 +640,7 @@ elif menu == "My Team":
                  .iloc[0]
               )
 
-                 diff_pool = candidates[
+              diff_pool = candidates[
                      candidates["Ownership"] < 10
              ]
 
@@ -657,7 +657,7 @@ elif menu == "My Team":
 
            else:
 
-              diff_pick = form_pick
+                 diff_pick = form_pick
 
               recommended = form_pick
 
@@ -682,7 +682,7 @@ elif menu == "My Team":
                 """
                 )
 
-                   report = f"""
+                report = f"""
                 ⚽ FPL NEXUS TRANSFER REPORT
 
                 SELL PLAYER
