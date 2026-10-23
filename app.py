@@ -279,11 +279,11 @@ elif page == "Captain Center":
 
     captain = players[
         [
-            "web_name",
             "name",
+            "club",
             "form",
             "total_points",
-            "selected_by_percent"
+            "selected"
         ]
     ].copy()
 
