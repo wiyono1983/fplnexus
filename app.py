@@ -570,22 +570,22 @@ elif menu == "League Info":
             ax.axis("off")
 
             # Fixed FPL-style column widths
-               width_map = {
-                      "Rank": 0.08,
-                      "Δ Rank": 0.08,
-                      "Team": 0.38,
-                      "Points": 0.12,
-                      "GW Points": 0.12,
-                      "Hits": 0.08,
-                      "Remaining Chips": 0.22
-               }
+            width_map = {
+                "Rank": 0.08,
+                "Δ Rank": 0.08,
+                "Team": 0.38,
+                "Points": 0.12,
+                "GW Points": 0.12,
+                "Hits": 0.08,
+                "Remaining Chips": 0.22
+            }
 
-               col_widths = [
-                   width_map.get(col, 0.15)
-                   for col in export_df.columns
-               ]
+            col_widths = [
+                width_map.get(col, 0.15)
+                for col in export_df.columns
+            ]
 
-
+            
             table = ax.table(
                 cellText=export_df.values,
                 colLabels=export_df.columns,
