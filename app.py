@@ -377,52 +377,52 @@ elif menu == "My Team":
 
     st.title("👤 My Team")
 
-LEAGUE_ID = 147447
+    LEAGUE_ID = 147447
 
-lookup_method = st.radio(
-    "Lookup Method",
-    [
-        "Team Name",
-        "FPL Team ID"
-    ],
-    horizontal=True
-)
-
-if lookup_method == "Team Name":
-
-    league = requests.get(
-        f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
-        timeout=20
-    ).json()
-
-    standings = pd.DataFrame(
-        league["standings"]["results"]
+    lookup_method = st.radio(
+       "Lookup Method",
+        [
+           "Team Name",
+           "FPL Team ID"
+        ],
+        horizontal=True
     )
 
-    team_options = sorted(
-        standings["entry_name"].tolist()
-    )
+    if lookup_method == "Team Name":
 
-    selected_team = st.selectbox(
-        "🏆 Select Team",
-        team_options
-    )
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
 
-    entry_id = standings.loc[
-        standings["entry_name"]
-        == selected_team,
-        "entry"
-    ].iloc[0]
+        standings = pd.DataFrame(
+            league["standings"]["results"]
+        )
+ 
+        team_options = sorted(
+           standings["entry_name"].tolist()
+        )
 
-else:
+        selected_team = st.selectbox(
+           "🏆 Select Team",
+           team_options
+        )
 
-    entry_id = st.number_input(
-        "FPL Team ID",
-        min_value=1,
-        step=1
-    )
+        entry_id = standings.loc[
+            standings["entry_name"]
+            == selected_team,
+            "entry"
+        ].iloc[0]
 
-if entry_id:
+       else:
+
+        entry_id = st.number_input(
+            "FPL Team ID",
+            min_value=1,
+            step=1
+        )
+
+       if entry_id:
 
 
         try:
