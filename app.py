@@ -143,53 +143,53 @@ def show_fixtures():
                 "%H:%M"
             )
 
-        gw_df["Kick Off"] = (
-            gw_df.apply(
-                get_status,
-                axis=1
+            gw_df["Kick Off"] = (
+               gw_df.apply(
+                  get_status,
+                  axis=1
+               )
             )
-        )
 
-        gw_df["Score"] = gw_df.apply(
-            lambda x:
-            f"{int(x['team_h_score'])}-{int(x['team_a_score'])}"
-            if pd.notna(
-                x["team_h_score"]
+            gw_df["Score"] = gw_df.apply(
+               lambda x:
+               f"{int(x['team_h_score'])}-{int(x['team_a_score'])}"
+               if pd.notna(
+                   x["team_h_score"]
+               )
+               and pd.notna(
+                   x["team_a_score"]
+               )
+               else "vs",
+               axis=1
             )
-            and pd.notna(
-                x["team_a_score"]
-            )
-            else "vs",
-            axis=1
-        )
 
-        fixture_view = gw_df[
-            [
-                "Kick Off",
-                "Home",
-                "Score",
-                "Away"
+            fixture_view = gw_df[
+              [
+                  "Kick Off",
+                  "Home",
+                  "Score",
+                  "Away"
+              ]
+            ].copy()
+
+            fixture_view.columns = [
+              "Status",
+              "Home Team",
+              "Score",
+              "Away Team"
             ]
-        ].copy()
 
-        fixture_view.columns = [
-            "Status",
-            "Home Team",
-            "Score",
-            "Away Team"
-        ]
+            st.dataframe(
+               fixture_view,
+               hide_index=True,
+               use_container_width=True
+            )
 
-        st.dataframe(
-            fixture_view,
-            hide_index=True,
-            use_container_width=True
-        )
+            except Exception as e:
 
-    except Exception as e:
-
-        st.error(
-            f"Error: {e}"
-        )
+              st.error(
+                f"Error: {e}"
+            )
 
 
         
