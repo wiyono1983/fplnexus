@@ -183,25 +183,34 @@ def show_fixtures():
 # =========================
 # SIDEBAR
 # =========================
-menu = st.sidebar.radio(
-    "📋 Menu",
-    [
-        "Home",
-        "Fixtures",
-        "My Team",
-        "Best XI",
-        "League Info",
-        "Standings",
-        "Statistics",
-        "Captain Picks",
-        "Rival Analyzer",
-        "Transfer Activity",
-        "Transfer Trends",
-        "IDX Nexus",
-        "Value Screener",
-        "MyPorto"
-    ]
+
+Menu = st.sidebar.radio(
+    "Kategori",
+    ["Saham", "FPL"]
 )
+
+if Menu == "Saham":
+    page = st.sidebar.radio(
+        "Menu Saham",
+        ["IDX Nexus", "Value Screener", "MyPorto"]
+    )
+
+elif Menu == "FPL":
+    page = st.sidebar.radio(
+        "Menu FPL",
+        [
+            "Fixtures",
+            "My Team",
+            "Best XI",
+            "League Info",
+            "Standings",
+            "Statistics",
+            "Captain Picks",
+            "Rival Analyzer",
+            "Transfer Activity",
+            "Transfer Trends"
+        ]
+    )
 
 
 
