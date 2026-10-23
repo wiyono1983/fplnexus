@@ -146,8 +146,7 @@ elif menu == "League Info":
         st.metric("Status", "Active")
 
         
-            
-                    elif menu == "My Team":
+  elif menu == "My Team":
 
     st.title("👤 My Team")
 
@@ -167,12 +166,12 @@ elif menu == "League Info":
             ).json()
 
             current_gw = next(
-                event["id"]
-                for event in bootstrap["events"]
-                if event["is_current"]
+                e["id"]
+                for e in bootstrap["events"]
+                if e["is_current"]
             )
 
-            # Get bank balance
+            # Get team information
             entry_data = requests.get(
                 f"https://fantasy.premierleague.com/api/entry/{entry_id}/",
                 timeout=20
@@ -193,7 +192,7 @@ elif menu == "League Info":
                 4: "FWD"
             }
 
-            # Current squad
+            # Squad
             picks = requests.get(
                 f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
                 timeout=20
@@ -215,13 +214,12 @@ elif menu == "League Info":
                         ],
                         "Price": player["now_cost"] / 10,
                         "Points": player["total_points"],
-                        "Form": player["form"]
+                        "Form": float(player["form"])
+                        if player["form"] else 0
                     }
                 )
 
-            squad_df = pd.DataFrame(
-                squad
-            )
+            squad_df = pd.DataFrame(squad)
 
             st.subheader(
                 f"My Squad - GW {current_gw}"
@@ -240,18 +238,16 @@ elif menu == "League Info":
             )
 
             sell_player = st.selectbox(
-                "Player to Sell",
+                "Select player to sell",
                 squad_df["Player"]
             )
 
             selected = squad_df[
-                squad_df["Player"]
-                == sell_player
+                squad_df["Player"] == sell_player
             ].iloc[0]
 
             available_budget = (
-                selected["Price"]
-                + bank
+                selected["Price"] + bank
             )
 
             col1, col2, col3, col4 = st.columns(4)
@@ -276,18 +272,18 @@ elif menu == "League Info":
 
             with col4:
                 st.metric(
-                    "Transfer Budget",
+                    "Budget",
                     f"£{available_budget:.1f}m"
                 )
 
-            position_map = {
+            pos_map = {
                 "GK": 1,
                 "DEF": 2,
                 "MID": 3,
                 "FWD": 4
             }
 
-            pos_id = position_map[
+            pos_id = pos_map[
                 selected["Position"]
             ]
 
@@ -302,7 +298,7 @@ elif menu == "League Info":
             candidates["Form"] = pd.to_numeric(
                 candidates["form"],
                 errors="coerce"
-            )
+            ).fillna(0)
 
             candidates["Value"] = (
                 candidates["total_points"]
@@ -319,7 +315,7 @@ elif menu == "League Info":
                 != sell_player
             ]
 
-            sort_mode = st.selectbox(
+            ranking = st.selectbox(
                 "Rank By",
                 [
                     "Points",
@@ -328,14 +324,14 @@ elif menu == "League Info":
                 ]
             )
 
-            if sort_mode == "Points":
+            if ranking == "Points":
 
                 candidates = candidates.sort_values(
                     "total_points",
                     ascending=False
                 )
 
-            elif sort_mode == "Form":
+            elif ranking == "Form":
 
                 candidates = candidates.sort_values(
                     "Form",
@@ -377,32 +373,29 @@ elif menu == "League Info":
                 use_container_width=True
             )
 
-            st.bar_chart(
-                suggestions.set_index(
-                    "Player"
-                )["Points"]
-            )
+            if not suggestions.empty:
 
-            # Best recommendation
-            best = suggestions.iloc[0]
+                best = suggestions.iloc[0]
 
-            st.success(
-                f"Recommended Transfer: "
-                f"{sell_player} ➜ {best['Player']} "
-                f"(£{best['Price']:.1f}m | "
-                f"{best['Points']} pts)"
-            )
+                st.success(
+                    f"Recommended Transfer: "
+                    f"{sell_player} ➜ {best['Player']} "
+                    f"(£{best['Price']:.1f}m | "
+                    f"{best['Points']} pts)"
+                )
+
+                st.bar_chart(
+                    suggestions.set_index(
+                        "Player"
+                    )["Points"]
+                )
 
         except Exception as e:
 
             st.error(
                 f"Error loading team: {e}"
             )
-
-            
-
-
-
+          
 
 
 elif menu == "Standings":
