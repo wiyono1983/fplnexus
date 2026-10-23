@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import requests
+import matplotlib.pyplot as plt
+from io import BytesIO
+
  
 st.set_page_config(
     page_title="FPL Fixtures",
@@ -380,6 +383,11 @@ elif menu == "League Info":
                     ) / 10
                 )
 
+                rank_change = (
+                    row["last_rank"]
+                    - row["rank"]
+                )
+
                 chips = history.get(
                     "chips",
                     []
@@ -413,6 +421,7 @@ elif menu == "League Info":
                 members.append(
                     {
                         "Rank": row["rank"],
+                        "Δ Rank": rank_change,
                         "Team": row["entry_name"],
                         "Manager": row["player_name"],
                         "Team ID": entry_id,
@@ -425,8 +434,8 @@ elif menu == "League Info":
                 )
 
                 progress.progress(
-                    (idx + 1)
-                    / len(standings)
+                    (idx + 1) /
+                    len(standings)
                 )
 
             except:
@@ -440,13 +449,28 @@ elif menu == "League Info":
 
         display_df = league_df.copy()
 
-        display_df["Hits"] = display_df[
-            "Hits"
-        ].apply(
-            lambda x:
-            f"-{x}"
-            if x > 0
-            else "0"
+        display_df["Δ Rank"] = (
+            display_df["Δ Rank"]
+            .apply(
+                lambda x:
+                f"▲{x}"
+                if x > 0
+                else (
+                    f"▼{abs(x)}"
+                    if x < 0
+                    else "▬"
+                )
+            )
+        )
+
+        display_df["Hits"] = (
+            display_df["Hits"]
+            .apply(
+                lambda x:
+                f"-{x}"
+                if x > 0
+                else "0"
+            )
         )
 
         display_df["Team Value"] = (
@@ -492,11 +516,16 @@ elif menu == "League Info":
             ascending=False
         ).iloc[0]
 
-        col1, col2, col3, col4 = st.columns(4)
+        biggest_climber = league_df.sort_values(
+            "Δ Rank",
+            ascending=False
+        ).iloc[0]
+
+        col1, col2, col3, col4, col5 = st.columns(5)
 
         with col1:
             st.metric(
-                "👑 League Leader",
+                "👑 Leader",
                 leader["Team"]
             )
 
@@ -518,21 +547,109 @@ elif menu == "League Info":
                 richest["Team"]
             )
 
+        with col5:
+            st.metric(
+                "🚀 Biggest Climber",
+                biggest_climber["Team"]
+            )
+
+        st.divider()
+
+        st.subheader(
+            "📷 Export League Table"
+        )
+
+        selected_columns = st.multiselect(
+            "Select Columns",
+            display_df.columns.tolist(),
+            default=[
+                "Rank",
+                "Δ Rank",
+                "Team",
+                "Points",
+                "GW Points",
+                "Hits",
+                "Remaining Chips"
+            ]
+        )
+
+        if selected_columns:
+
+            export_df = display_df[
+                selected_columns
+            ]
+
+            fig_height = max(
+                2,
+                len(export_df) * 0.45
+            )
+
+            fig, ax = plt.subplots(
+                figsize=(14, fig_height)
+            )
+
+            ax.axis("off")
+
+            table = ax.table(
+                cellText=export_df.values,
+                colLabels=export_df.columns,
+                loc="center"
+            )
+
+            table.auto_set_font_size(False)
+            table.set_fontsize(10)
+            table.scale(1.2, 1.5)
+
+            for (
+                row_id,
+                col_id
+            ), cell in table.get_celld().items():
+
+                if row_id == 0:
+
+                    cell.set_facecolor(
+                        "#2E7D32"
+                    )
+
+                    cell.set_text_props(
+                        color="white",
+                        weight="bold"
+                    )
+
+            plt.tight_layout()
+
+            img_buffer = BytesIO()
+
+            plt.savefig(
+                img_buffer,
+                format="jpg",
+                dpi=300,
+                bbox_inches="tight"
+            )
+
+            img_buffer.seek(0)
+
+            st.image(
+                img_buffer,
+                caption="Preview"
+            )
+
+            st.download_button(
+                label="📥 Download JPG",
+                data=img_buffer,
+                file_name="league_table.jpg",
+                mime="image/jpeg"
+            )
+
+            plt.close()
+
     except Exception as e:
 
         st.error(
             f"Error loading league info: {e}"
         )
 
-
-
         
-
-            
-
-        
-        
-
 elif menu == "My Team":
 
     st.title("👤 My Team")
