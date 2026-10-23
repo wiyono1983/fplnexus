@@ -190,7 +190,7 @@ menu = st.sidebar.radio(
         "Standings",
         "Statistics",
         "Captain Picks",
-        "Awards"
+        "Transfer Activity"
     ]
 )
 
@@ -1541,6 +1541,187 @@ Ownership:
             f"Error loading captain picks: {e}"
         )
 
-elif menu == "Awards":
-    st.title("🏅 Awards")
-    st.write("Penghargaan liga.")
+elif menu == "Transfer Activity":
+
+    st.title("🔄 Transfer Activity")
+
+    entry_id = st.number_input(
+        "FPL Team ID",
+        min_value=1,
+        step=1
+    )
+
+    if entry_id:
+
+        try:
+
+            bootstrap = requests.get(
+                "https://fantasy.premierleague.com/api/bootstrap-static/",
+                timeout=20
+            ).json()
+
+            players = pd.DataFrame(
+                bootstrap["elements"]
+            )
+
+            player_lookup = dict(
+                zip(
+                    players["id"],
+                    players["web_name"]
+                )
+            )
+
+            current_gw = next(
+                e["id"]
+                for e in bootstrap["events"]
+                if e["is_current"]
+            )
+
+            selected_gw = st.selectbox(
+                "Gameweek",
+                list(range(1, current_gw + 2))
+            )
+
+            entry_data = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/",
+                timeout=20
+            ).json()
+
+            bank = (
+                entry_data.get(
+                    "last_deadline_bank",
+                    0
+                ) / 10
+            )
+
+            transfers_data = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/transfers/",
+                timeout=20
+            ).json()
+
+            gw_transfers = [
+                t
+                for t in transfers_data
+                if t["event"] == selected_gw
+            ]
+
+            st.subheader(
+                f"GW{selected_gw} Transfer Activity"
+            )
+
+            active_chip = "None"
+
+            try:
+
+                picks = requests.get(
+                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{selected_gw}/picks/",
+                    timeout=20
+                ).json()
+
+                active_chip = (
+                    picks.get(
+                        "active_chip"
+                    )
+                    or "None"
+                )
+
+            except:
+                pass
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.metric(
+                    "Bank",
+                    f"£{bank:.1f}m"
+                )
+
+            with col2:
+                st.metric(
+                    "Transfers",
+                    len(gw_transfers)
+                )
+
+            with col3:
+                st.metric(
+                    "Active Chip",
+                    active_chip
+                )
+
+            if gw_transfers:
+
+                rows = []
+
+                for transfer in gw_transfers:
+
+                    rows.append(
+                        {
+                            "Date": transfer[
+                                "time"
+                            ][
+                                :16
+                            ].replace(
+                                "T",
+                                " "
+                            ),
+                            "OUT": player_lookup.get(
+                                transfer[
+                                    "element_out"
+                                ],
+                                "Unknown"
+                            ),
+                            "IN": player_lookup.get(
+                                transfer[
+                                    "element_in"
+                                ],
+                                "Unknown"
+                            )
+                        }
+                    )
+
+                transfer_df = pd.DataFrame(
+                    rows
+                )
+
+                st.dataframe(
+                    transfer_df,
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+                whatsapp_report = (
+                    f"⚽ FPL NEXUS GW{selected_gw}\n\n"
+                    f"Team ID: {entry_id}\n"
+                    f"Bank: £{bank:.1f}m\n"
+                    f"Active Chip: {active_chip}\n\n"
+                    f"Transfers Made: {len(gw_transfers)}\n\n"
+                )
+
+                for idx, row in transfer_df.iterrows():
+
+                    whatsapp_report += (
+                        f"OUT: {row['OUT']}\n"
+                        f"IN : {row['IN']}\n\n"
+                    )
+
+                st.subheader(
+                    "📱 Copy To WhatsApp"
+                )
+
+                st.code(
+                    whatsapp_report,
+                    language="text"
+                )
+
+            else:
+
+                st.info(
+                    f"No transfers recorded for GW{selected_gw}."
+                )
+
+        except Exception as e:
+
+            st.error(
+                f"Error loading transfers: {e}"
+            )
+
