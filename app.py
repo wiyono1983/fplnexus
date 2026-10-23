@@ -186,6 +186,7 @@ menu = st.sidebar.radio(
         "Home",
         "Fixtures",
         "My Team",
+        "Best XI",
         "League Info",
         "Standings",
         "Statistics",
@@ -2401,4 +2402,293 @@ Differentials:
         )
 
 
-    
+ elif menu == "Best XI":
+
+    st.title("🔥 Best XI")
+
+    LEAGUE_ID = 147447
+
+    lookup_method = st.radio(
+        "Lookup Method",
+        [
+            "Team Name",
+            "FPL Team ID"
+        ],
+        horizontal=True
+    )
+
+    if lookup_method == "Team Name":
+
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        standings = pd.DataFrame(
+            league["standings"]["results"]
+        )
+
+        team_options = sorted(
+            standings["entry_name"].tolist()
+        )
+
+        selected_team = st.selectbox(
+            "🏆 Select Team",
+            team_options
+        )
+
+        entry_id = standings.loc[
+            standings["entry_name"]
+            == selected_team,
+            "entry"
+        ].iloc[0]
+
+    else:
+
+        entry_id = st.number_input(
+            "FPL Team ID",
+            min_value=1,
+            step=1
+        )
+
+    if entry_id:
+
+        try:
+
+            bootstrap = requests.get(
+                "https://fantasy.premierleague.com/api/bootstrap-static/",
+                timeout=20
+            ).json()
+
+            current_gw = next(
+                e["id"]
+                for e in bootstrap["events"]
+                if e["is_current"]
+            )
+
+            players = pd.DataFrame(
+                bootstrap["elements"]
+            )
+
+            positions = {
+                1: "GK",
+                2: "DEF",
+                3: "MID",
+                4: "FWD"
+            }
+
+            entry_data = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/",
+                timeout=20
+            ).json()
+
+            team_name = entry_data.get(
+                "name",
+                "Unknown"
+            )
+
+            manager_name = (
+                f"{entry_data.get('player_first_name', '')} "
+                f"{entry_data.get('player_last_name', '')}"
+            ).strip()
+
+            picks = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
+                timeout=20
+            ).json()
+
+            squad = []
+
+            for p in picks["picks"]:
+
+                player = players[
+                    players["id"] == p["element"]
+                ].iloc[0]
+
+                squad.append(
+                    {
+                        "Player": player["web_name"],
+                        "Position": positions[
+                            player["element_type"]
+                        ],
+                        "Points": player["total_points"],
+                        "Form": float(
+                            player["form"]
+                        ) if player["form"] else 0
+                    }
+                )
+
+            squad_df = pd.DataFrame(
+                squad
+            )
+
+            gk_df = squad_df[
+                squad_df["Position"] == "GK"
+            ].sort_values(
+                "Form",
+                ascending=False
+            )
+
+            def_df = squad_df[
+                squad_df["Position"] == "DEF"
+            ].sort_values(
+                "Form",
+                ascending=False
+            )
+
+            mid_df = squad_df[
+                squad_df["Position"] == "MID"
+            ].sort_values(
+                "Form",
+                ascending=False
+            )
+
+            fwd_df = squad_df[
+                squad_df["Position"] == "FWD"
+            ].sort_values(
+                "Form",
+                ascending=False
+            )
+
+            valid_formations = [
+                (3,4,3),
+                (3,5,2),
+                (4,4,2),
+                (4,3,3),
+                (4,5,1),
+                (5,4,1),
+                (5,3,2),
+                (5,2,3)
+            ]
+
+            best_score = -1
+            best_xi = None
+            best_formation = None
+
+            for d, m, f in valid_formations:
+
+                if (
+                    len(def_df) < d
+                    or len(mid_df) < m
+                    or len(fwd_df) < f
+                ):
+                    continue
+
+                xi = pd.concat(
+                    [
+                        gk_df.head(1),
+                        def_df.head(d),
+                        mid_df.head(m),
+                        fwd_df.head(f)
+                    ]
+                )
+
+                score = xi["Form"].sum()
+
+                if score > best_score:
+
+                    best_score = score
+                    best_xi = xi.copy()
+                    best_formation = (
+                        f"{d}-{m}-{f}"
+                    )
+
+            bench = squad_df[
+                ~squad_df["Player"].isin(
+                    best_xi["Player"]
+                )
+            ]
+
+            st.success(
+                f"""
+🏆 Team: {team_name}
+
+👤 Manager: {manager_name}
+
+✅ Best Formation: {best_formation}
+
+🔥 Total Form Score: {best_score:.1f}
+"""
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.subheader(
+                    "✅ Starting XI"
+                )
+
+                st.dataframe(
+                    best_xi[
+                        [
+                            "Player",
+                            "Position",
+                            "Points",
+                            "Form"
+                        ]
+                    ],
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+            with col2:
+
+                st.subheader(
+                    "🪑 Bench Order"
+                )
+
+                bench = bench.sort_values(
+                    "Form",
+                    ascending=False
+                )
+
+                st.dataframe(
+                    bench[
+                        [
+                            "Player",
+                            "Position",
+                            "Points",
+                            "Form"
+                        ]
+                    ],
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+            captain = (
+                best_xi.sort_values(
+                    "Form",
+                    ascending=False
+                )
+                .iloc[0]
+            )
+
+            vice = (
+                best_xi.sort_values(
+                    "Form",
+                    ascending=False
+                )
+                .iloc[1]
+            )
+
+            st.info(
+                f"""
+🧢 Recommended Captain
+
+{captain['Player']}
+(Form {captain['Form']})
+
+🎖 Recommended Vice Captain
+
+{vice['Player']}
+(Form {vice['Form']})
+"""
+            )
+
+        except Exception as e:
+
+            st.error(
+                f"Error loading squad: {e}"
+            )
+   
