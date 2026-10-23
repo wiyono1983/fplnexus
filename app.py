@@ -224,10 +224,14 @@ elif page == "My Team":
             squad["picks"]
         )
 
-        team = picks.merge(
-            players,
-            left_on="element",
-            right_on="id"
+        team = pd.merge(
+    picks,
+    players,
+    left_on="element",
+    right_on="player_id",
+    how="left"
+)
+
         )
 
         squad_view = team[
