@@ -1436,86 +1436,6 @@ elif menu == "Standings":
         st.error(
             f"Error loading standings: {e}"
         )
-elif menu == "Statistics":
-
-    st.title("📈 Player Statistics")
-
-    try:
-
-        bootstrap = requests.get(
-            "https://fantasy.premierleague.com/api/bootstrap-static/",
-            timeout=20
-        ).json()
-
-        players = pd.DataFrame(
-            bootstrap["elements"]
-        )
-
-        stat_options = {
-            "Goals": "goals_scored",
-            "Assists": "assists",
-            "Clean Sheets": "clean_sheets",
-            "Minutes": "minutes",
-            "Bonus Points": "bonus",
-            "ICT Index": "ict_index",
-            "Influence": "influence",
-            "Creativity": "creativity",
-            "Threat": "threat",
-            "Dream Team": "dreamteam_count",
-            "Yellow Cards": "yellow_cards",
-            "Red Cards": "red_cards",
-            "Saves": "saves"
-        }
-
-        selected_stat = st.selectbox(
-            "Select Statistic",
-            list(stat_options.keys())
-        )
-
-        stat_col = stat_options[
-            selected_stat
-        ]
-
-        stats_df = players[
-            [
-                "web_name",
-                stat_col
-            ]
-        ].copy()
-
-        stats_df.columns = [
-            "Player",
-            selected_stat
-        ]
-
-        stats_df = stats_df.sort_values(
-            selected_stat,
-            ascending=False
-        ).head(20)
-
-        st.subheader(
-            f"Top 20 - {selected_stat}"
-        )
-
-        st.dataframe(
-            stats_df,
-            hide_index=True,
-            use_container_width=True
-        )
-
-        st.bar_chart(
-            stats_df.set_index(
-                "Player"
-            )[selected_stat]
-        )
-
-    except Exception as e:
-
-        st.error(
-            f"Error loading statistics: {e}"
-        )
-
-
 
 elif menu == "Captain Picks":
 
@@ -3631,3 +3551,148 @@ Average Buy : {new_avg:.2f}
             file_name="portfolio.csv",
             mime="text/csv"
         )
+
+elif menu == "Statistics":
+
+    st.title("📈 Player Statistics")
+
+    try:
+
+        bootstrap = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()
+
+        players = pd.DataFrame(
+            bootstrap["elements"]
+        )
+
+        stat_options = {
+            "Goals": "goals_scored",
+            "Assists": "assists",
+            "Clean Sheets": "clean_sheets",
+            "Minutes": "minutes",
+            "Bonus Points": "bonus",
+            "ICT Index": "ict_index",
+            "Influence": "influence",
+            "Creativity": "creativity",
+            "Threat": "threat",
+            "Dream Team": "dreamteam_count",
+            "Yellow Cards": "yellow_cards",
+            "Red Cards": "red_cards",
+            "Saves": "saves",
+            "DefCon": "clearances_blocks_interceptions"
+        }
+
+        selected_stat = st.selectbox(
+            "Select Statistic",
+            list(stat_options.keys())
+        )
+
+        stat_col = stat_options[
+            selected_stat
+        ]
+
+        if selected_stat == "DefCon":
+
+            players["DefCon"] = pd.to_numeric(
+                players[
+                    "clearances_blocks_interceptions"
+                ],
+                errors="coerce"
+            ).fillna(0)
+
+            stats_df = players[
+                [
+                    "web_name",
+                    "minutes",
+                    "DefCon"
+                ]
+            ].copy()
+
+            stats_df.columns = [
+                "Player",
+                "Minutes",
+                "DefCon"
+            ]
+
+            stats_df = stats_df[
+                stats_df["Minutes"] >= 300
+            ]
+
+            stats_df = stats_df.sort_values(
+                "DefCon",
+                ascending=False
+            ).head(10)
+
+            st.subheader(
+                "🛡️ Top 10 Defensive Contribution"
+            )
+
+            st.dataframe(
+                stats_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+            st.divider()
+
+            whatsapp_text = (
+                "🛡️ FPL NEXUS DEFCON TOP 5\n\n"
+            )
+
+            for i, row in enumerate(
+                stats_df.head(5).itertuples(),
+                start=1
+            ):
+
+                whatsapp_text += (
+                    f"{i}. "
+                    f"{row.Player} "
+                    f"({int(row.DefCon)})\n"
+                )
+
+            st.subheader(
+                "📱 Copy To WhatsApp"
+            )
+
+            st.code(
+                whatsapp_text,
+                language="text"
+            )
+
+        else:
+
+            stats_df = players[
+                [
+                    "web_name",
+                    stat_col
+                ]
+            ].copy()
+
+            stats_df.columns = [
+                "Player",
+                selected_stat
+            ]
+
+            stats_df = stats_df.sort_values(
+                selected_stat,
+                ascending=False
+            ).head(20)
+
+            st.subheader(
+                f"Top 20 - {selected_stat}"
+            )
+
+            st.dataframe(
+                stats_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading statistics: {e}"
+        )
+
