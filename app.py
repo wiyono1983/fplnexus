@@ -109,10 +109,15 @@ def show_fixtures():
             f"{start_date} - {end_date}"
         )
 
-        gw_df["Kick Off"] = (
-            gw_df["kickoff_time"]
-            .dt.strftime("%H:%M")
+        gw_df["Kick Off"] = gw_df.apply(
+            lambda x:
+            "FT"
+            if pd.notna(x["team_h_score"])
+        and pd.notna(x["team_a_score"])
+        else x["kickoff_time"].strftime("%H:%M"),
+            axis=1
         )
+
 
         gw_df["Score"] = gw_df.apply(
             lambda x:
