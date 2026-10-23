@@ -510,6 +510,12 @@ elif menu == "My Team":
                 / candidates["Price"]
             ).round(2)
 
+            candidates["Ownership"] = pd.to_numeric(
+                candidates["selected_by_percent"],
+                errors="coerce"
+            ).fillna(100)
+
+
             # Budget filter
             candidates = candidates[
                 candidates["Price"]
@@ -539,39 +545,41 @@ elif menu == "My Team":
                 [
                     "Points",
                     "Form",
-                    "Value"
+                    "Value",
+                    "Differential"
                 ]
             )
 
             if ranking == "Points":
 
-                candidates = (
-                    candidates
-                    .sort_values(
-                        "total_points",
-                        ascending=False
-                    )
-                )
+               candidates = candidates.sort_values(
+                   "total_points",
+                   ascending=False
+              )
 
             elif ranking == "Form":
 
-                candidates = (
-                    candidates
-                    .sort_values(
-                        "Form",
-                        ascending=False
-                    )
-                )
+               candidates = candidates.sort_values(
+                   "Form",
+                   ascending=False
+            )
+
+            elif ranking == "Value":
+
+               candidates = candidates.sort_values(
+                   "Value",
+                   ascending=False
+            )
 
             else:
 
-                candidates = (
-                    candidates
-                    .sort_values(
-                        "Value",
-                        ascending=False
-                    )
-                )
+               candidates = candidates[
+                  candidates["Ownership"] < 10
+                  ].sort_values(
+                  "Form",
+                  ascending=False
+            )
+
 
             suggestions = candidates[
                 [
@@ -579,7 +587,8 @@ elif menu == "My Team":
                     "Price",
                     "total_points",
                     "Form",
-                    "Value"
+                    "Value",
+                    "Ownership"
                 ]
             ].head(10)
 
@@ -588,7 +597,8 @@ elif menu == "My Team":
                 "Price",
                 "Points",
                 "Form",
-                "Value"
+                "Value",
+                "Own %"
             ]
 
             st.subheader(
@@ -601,23 +611,133 @@ elif menu == "My Team":
                 use_container_width=True
             )
 
-            if not suggestions.empty:
+            if not candidates.empty:
 
-                best = suggestions.iloc[0]
+              points_pick = (
+                  candidates
+                  .sort_values(
+                  "total_points",
+                  ascending=False
+                 )
+                .iloc[0]
+              )
 
-                st.success(
-                    f"✅ Suggested Transfer: "
-                    f"{sell_player} ➜ "
-                    f"{best['Player']} "
-                    f"(£{best['Price']:.1f}m | "
-                    f"{best['Points']} pts)"
-                )
+              form_pick = (
+                 candidates
+                   .sort_values(
+                   "Form",
+                   ascending=False
+                 )
+                 .iloc[0]
+              )
 
-                st.bar_chart(
-                    suggestions.set_index(
-                        "Player"
-                    )["Points"]
-                )
+    value_pick = (
+        candidates
+        .sort_values(
+            "Value",
+            ascending=False
+        )
+        .iloc[0]
+    )
+
+    diff_pool = candidates[
+        candidates["Ownership"] < 10
+    ]
+
+    if not diff_pool.empty:
+
+        diff_pick = (
+            diff_pool
+            .sort_values(
+                "Form",
+                ascending=False
+            )
+            .iloc[0]
+        )
+
+    else:
+
+        diff_pick = form_pick
+
+    recommended = form_pick
+
+    remaining_budget = (
+        available_budget
+        - recommended["Price"]
+    )
+
+    st.success(
+        f"""
+✅ Suggested Transfer
+
+{sell_player}
+➡️
+{recommended['web_name']}
+
+Buy Price:
+£{recommended['Price']:.1f}m
+
+Remaining Budget:
+£{remaining_budget:.1f}m
+"""
+    )
+
+    report = f"""
+⚽ FPL NEXUS TRANSFER REPORT
+
+SELL PLAYER
+❌ {sell_player}
+
+Sell Price: £{selected['Price']:.1f}m
+Current Bank: £{bank:.1f}m
+Available Budget: £{available_budget:.1f}m
+
+🏆 POINTS PICK
+{points_pick['web_name']}
+{points_pick['total_points']} pts
+
+🔥 FORM PICK
+{form_pick['web_name']}
+Form {form_pick['Form']}
+
+💰 VALUE PICK
+{value_pick['web_name']}
+Value {value_pick['Value']}
+
+🎯 DIFFERENTIAL PICK
+{diff_pick['web_name']}
+Ownership {diff_pick['Ownership']}%
+
+✅ RECOMMENDED TRANSFER
+
+OUT:
+{sell_player}
+
+IN:
+{recommended['web_name']}
+
+Buy Price:
+£{recommended['Price']:.1f}m
+
+Remaining Budget:
+£{remaining_budget:.1f}m
+"""
+
+    st.subheader(
+        "📱 Copy To WhatsApp"
+    )
+
+    st.code(
+        report,
+        language="text"
+    )
+
+    st.bar_chart(
+        suggestions.set_index(
+            "Player"
+        )["Points"]
+    )
+
 
         except Exception as e:
 
