@@ -169,11 +169,6 @@ elif menu == "My Team":
                 if e["is_current"]
             )
 
-            picks = requests.get(
-                f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
-                timeout=20
-            ).json()
-
             players = pd.DataFrame(
                 bootstrap["elements"]
             )
@@ -184,6 +179,12 @@ elif menu == "My Team":
                 3: "MID",
                 4: "FWD"
             }
+
+            # Squad
+            picks = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{current_gw}/picks/",
+                timeout=20
+            ).json()
 
             squad = []
 
@@ -200,13 +201,12 @@ elif menu == "My Team":
                             player["element_type"]
                         ],
                         "Price": player["now_cost"] / 10,
-                        "Points": player["total_points"]
+                        "Points": player["total_points"],
+                        "Form": player["form"]
                     }
                 )
 
-            squad_df = pd.DataFrame(
-                squad
-            )
+            squad_df = pd.DataFrame(squad)
 
             st.subheader(
                 f"My Squad - GW {current_gw}"
@@ -218,25 +218,46 @@ elif menu == "My Team":
                 use_container_width=True
             )
 
+            st.divider()
+
             st.subheader(
-                "🔍 Suggested Transfer"
+                "🔄 Transfer Planner"
             )
 
-            lowest = squad_df.sort_values(
-                "Points"
-            ).iloc[0]
+            sell_player = st.selectbox(
+                "Pilih pemain yang akan dijual",
+                squad_df["Player"]
+            )
 
-            player_pos = lowest["Position"]
-            player_price = lowest["Price"]
+            selected = squad_df[
+                squad_df["Player"] == sell_player
+            ].iloc[0]
 
-            if player_pos == "GK":
-                pos_id = 1
-            elif player_pos == "DEF":
-                pos_id = 2
-            elif player_pos == "MID":
-                pos_id = 3
-            else:
-                pos_id = 4
+            bank = st.number_input(
+                "Bank (£m)",
+                min_value=0.0,
+                value=0.0,
+                step=0.1
+            )
+
+            available_budget = (
+                selected["Price"] + bank
+            )
+
+            st.success(
+                f"Budget tersedia £{available_budget:.1f}m"
+            )
+
+            position_map = {
+                "GK": 1,
+                "DEF": 2,
+                "MID": 3,
+                "FWD": 4
+            }
+
+            pos_id = position_map[
+                selected["Position"]
+            ]
 
             candidates = players[
                 players["element_type"] == pos_id
@@ -246,22 +267,63 @@ elif menu == "My Team":
                 candidates["now_cost"] / 10
             )
 
+            candidates["Form"] = pd.to_numeric(
+                candidates["form"],
+                errors="coerce"
+            )
+
+            candidates["Value"] = (
+                candidates["total_points"]
+                / candidates["Price"]
+            ).round(2)
+
             candidates = candidates[
                 candidates["Price"]
-                >= player_price
+                <= available_budget
             ]
 
-            candidates = candidates.sort_values(
-                "total_points",
-                ascending=False
+            candidates = candidates[
+                candidates["web_name"]
+                != sell_player
+            ]
+
+            sort_mode = st.selectbox(
+                "Ranking berdasarkan",
+                [
+                    "Points",
+                    "Form",
+                    "Value"
+                ]
             )
+
+            if sort_mode == "Points":
+
+                candidates = candidates.sort_values(
+                    "total_points",
+                    ascending=False
+                )
+
+            elif sort_mode == "Form":
+
+                candidates = candidates.sort_values(
+                    "Form",
+                    ascending=False
+                )
+
+            else:
+
+                candidates = candidates.sort_values(
+                    "Value",
+                    ascending=False
+                )
 
             suggestions = candidates[
                 [
                     "web_name",
                     "Price",
                     "total_points",
-                    "form"
+                    "Form",
+                    "Value"
                 ]
             ].head(10)
 
@@ -269,25 +331,33 @@ elif menu == "My Team":
                 "Player",
                 "Price",
                 "Points",
-                "Form"
+                "Form",
+                "Value"
             ]
 
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
 
             with col1:
                 st.metric(
-                    "Current Weakest Asset",
-                    lowest["Player"]
-                )
-                st.caption(
-                    f'{lowest["Position"]} • {lowest["Points"]} pts'
+                    "Jual",
+                    sell_player
                 )
 
             with col2:
                 st.metric(
-                    "Current Price",
-                    f'£{lowest["Price"]:.1f}m'
+                    "Posisi",
+                    selected["Position"]
                 )
+
+            with col3:
+                st.metric(
+                    "Budget",
+                    f"£{available_budget:.1f}m"
+                )
+
+            st.subheader(
+                "🔥 Top Replacement"
+            )
 
             st.dataframe(
                 suggestions,
@@ -306,6 +376,9 @@ elif menu == "My Team":
             st.error(
                 f"Error loading team: {e}"
             )
+
+
+
 
 elif menu == "Standings":
 
