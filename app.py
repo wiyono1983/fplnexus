@@ -475,15 +475,50 @@ elif page == "Fixtures":
             fixture_df["team_a"].map(team_lookup)
         )
 
-        st.dataframe(
-            fixture_df[
-                [
-                    "event",
-                    "Home Team",
-                    "Away Team",
-                    "team_h_difficulty",
-                    "team_a_difficulty"
-                ]
-            ],
-            use_container_width=True
-        )
+        st.markdown("## 📅 Fixtures")
+
+gw = st.selectbox(
+    "Gameweek",
+    sorted(fixtures_df["event"].unique()),
+    index=0
+)
+
+gw_df = fixtures_df[fixtures_df["event"] == gw]
+
+for _, row in gw_df.iterrows():
+
+    st.markdown(
+        f"""
+        <div style="
+            border:1px solid #ddd;
+            border-radius:12px;
+            padding:16px;
+            margin-bottom:12px;
+        ">
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                font-size:18px;
+                font-weight:600;
+            ">
+                <div style="width:40%;text-align:right;">
+                    {row['Home Team']}
+                </div>
+
+                <div style="
+                    width:20%;
+                    text-align:center;
+                    font-weight:bold;
+                ">
+                    vs
+                </div>
+
+                <div style="width:40%;text-align:left;">
+                    {row['Away Team']}
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
