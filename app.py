@@ -190,7 +190,7 @@ menu = st.sidebar.radio(
         "Standings",
         "Statistics",
         "Captain Picks",
-        "Rival Analyzer"
+        "Rival Analyzer",
         "Transfer Activity",
         "Transfer Trends"
     ]
