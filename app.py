@@ -1299,7 +1299,8 @@ elif menu == "Statistics":
             f"Error loading statistics: {e}"
         )
 
- elif menu == "Captain Picks":
+elif menu == "Captain Picks":
+
 
     st.title("🧢 Captain & Vice Captain")
 
