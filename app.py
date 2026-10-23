@@ -611,63 +611,64 @@ elif menu == "My Team":
                 use_container_width=True
             )
 
+            
             if not candidates.empty:
 
-              points_pick = (
-                  candidates
-                  .sort_values(
-                  "total_points",
-                  ascending=False
-                 )
-                .iloc[0]
-              )
+                points_pick = (
+                    candidates
+                    .sort_values(
+                        "total_points",
+                        ascending=False
+                    )
+                    .iloc[0]
+                )
 
-              form_pick = (
-                 candidates
-                   .sort_values(
-                   "Form",
-                   ascending=False
-                 )
-                 .iloc[0]
-              )
+                form_pick = (
+                    candidates
+                    .sort_values(
+                        "Form",
+                        ascending=False
+                    )
+                    .iloc[0]
+                )
 
-              value_pick = (
-                 candidates
-                   .sort_values(
-                   "Value",
-                   ascending=False
-                 )
-                 .iloc[0]
-              )
+                value_pick = (
+                    candidates
+                    .sort_values(
+                        "Value",
+                        ascending=False
+                    )
+                    .iloc[0]
+                )
 
-              diff_pool = candidates[
-                     candidates["Ownership"] < 10
-             ]
+                diff_pool = candidates[
+                    candidates["Ownership"] < 10
+                ]
 
-           if not diff_pool.empty:
+                if not diff_pool.empty:
 
-               diff_pick = (
-                  diff_pool
-                  .sort_values(
-                  "Form",
-                  ascending=False
-                  )
-                  .iloc[0]
-               )
+                    diff_pick = (
+                        diff_pool
+                        .sort_values(
+                            "Form",
+                            ascending=False
+                        )
+                        .iloc[0]
+                    )
 
-           else:
+                else:
 
-                 diff_pick = form_pick
+                    diff_pick = form_pick
 
-              recommended = form_pick
+                recommended = form_pick
 
-              remaining_budget = (
-                 available_budget
-                 - recommended["Price"]
-              )
+                remaining_budget = (
+                    available_budget
+                    - recommended["Price"]
+                )
 
                 st.success(
-                   f"""
+                    f"""
                 ✅ Suggested Transfer
 
                 {sell_player}
@@ -706,7 +707,7 @@ elif menu == "My Team":
 
                 🎯 DIFFERENTIAL PICK
                 {diff_pick['web_name']}
-                 Ownership {diff_pick['Ownership']}%
+                Ownership {diff_pick['Ownership']}%
 
                 ✅ RECOMMENDED TRANSFER
 
@@ -724,19 +725,20 @@ elif menu == "My Team":
                 """
 
                 st.subheader(
-                   "📱 Copy To WhatsApp"
+                    "📱 Copy To WhatsApp"
                 )
- 
+
                 st.code(
                     report,
                     language="text"
                 )
- 
+
                 st.bar_chart(
-                   suggestions.set_index(
-                      "Player"
-                   )["Points"]
+                    suggestions.set_index(
+                        "Player"
+                    )["Points"]
                 )
+
 
 
         except Exception as e:
