@@ -4,14 +4,13 @@ import requests
 
 st.set_page_config(
     page_title="FPL Fixtures",
-    page_icon="⚽",
-    layout="centered"
+    page_icon="⚽"
 )
 
 st.title("⚽ FPL Fixtures")
 
 @st.cache_data(ttl=300)
-def get_data():
+def load_data():
 
     bootstrap = requests.get(
         "https://fantasy.premierleague.com/api/bootstrap-static/",
@@ -28,7 +27,7 @@ def get_data():
 
 try:
 
-    bootstrap, fixtures = get_data()
+    bootstrap, fixtures = load_data()
 
     teams = pd.DataFrame(
         bootstrap["teams"]
@@ -45,11 +44,11 @@ try:
         )
     )
 
-    fixture_df["Home Team"] = (
+    fixture_df["Home"] = (
         fixture_df["team_h"].map(team_lookup)
     )
 
-    fixture_df["Away Team"] = (
+    fixture_df["Away"] = (
         fixture_df["team_a"].map(team_lookup)
     )
 
@@ -73,6 +72,10 @@ try:
         fixture_df["event"] == gw
     ].copy()
 
+    st.subheader(
+        f"Gameweek {gw}"
+    )
+
     start_date = (
         gw_df["kickoff_time"]
         .min()
@@ -85,46 +88,28 @@ try:
         .strftime("%d %b %Y")
     )
 
-    st.subheader(
-        f"Gameweek {gw}"
-    )
-
     st.caption(
         f"{start_date} - {end_date}"
     )
 
-    st.divider()
+    gw_df["KO"] = (
+        gw_df["kickoff_time"]
+        .dt.strftime("%H:%M")
+    )
 
-    for _, row in gw_df.iterrows():
+    fixture_view = gw_df[
+        [
+            "Home",
+            "KO",
+            "Away"
+        ]
+    ]
 
-        kickoff = "--:--"
-
-        if pd.notna(row["kickoff_time"]):
-            kickoff = row[
-                "kickoff_time"
-            ].strftime("%H:%M")
-
-        left, center, right = st.columns(
-            [5, 2, 5]
-        )
-
-        with left:
-            st.markdown(
-                f"<div style='text-align:right'>{row['Home Team']}</div>",
-                unsafe_allow_html=True
-            )
-
-        with center:
-            st.markdown(
-                f"<div style='text-align:center'><b>{kickoff}</b></div>",
-                unsafe_allow_html=True
-            )
-
-        with right:
-            st.markdown(
-                f"<div style='text-align:left'>{row['Away Team']}</div>",
-                unsafe_allow_html=True
-            )
+    st.dataframe(
+        fixture_view,
+        hide_index=True,
+        use_container_width=True
+    )
 
 except Exception as e:
 
