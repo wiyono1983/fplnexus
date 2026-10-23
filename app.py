@@ -32,7 +32,6 @@ def load_data():
 
     return bootstrap, fixtures
 
-
 def show_fixtures():
 
     st.title("⚽ FPL Fixtures")
@@ -112,15 +111,44 @@ def show_fixtures():
             f"{start_date} - {end_date}"
         )
 
-        gw_df["Kick Off"] = gw_df.apply(
-            lambda x:
-            "FT"
-            if pd.notna(x["team_h_score"])
-        and pd.notna(x["team_a_score"])
-        else x["kickoff_time"].strftime("%H:%M"),
-            axis=1
+        now = pd.Timestamp.now(
+            tz="Asia/Jakarta"
         )
 
+        def get_status(row):
+
+            kickoff = row[
+                "kickoff_time"
+            ]
+
+            if pd.isna(kickoff):
+                return "-"
+
+            diff_hours = (
+                now - kickoff
+            ).total_seconds() / 3600
+
+            if row.get(
+                "finished",
+                False
+            ):
+                return "FT"
+
+            if (
+                0 <= diff_hours < 2
+            ):
+                return "LIVE"
+
+            return kickoff.strftime(
+                "%H:%M"
+            )
+
+        gw_df["Kick Off"] = (
+            gw_df.apply(
+                get_status,
+                axis=1
+            )
+        )
 
         gw_df["Score"] = gw_df.apply(
             lambda x:
@@ -145,29 +173,14 @@ def show_fixtures():
         ].copy()
 
         fixture_view.columns = [
-            "Kick Off",
+            "Status",
             "Home Team",
             "Score",
             "Away Team"
         ]
 
-        styled = (
-            fixture_view
-            .style
-            .set_properties(
-                subset=[
-                    "Kick Off",
-                    "Score"
-                ],
-                **{
-                    "text-align":
-                    "center"
-                }
-            )
-        )
-
         st.dataframe(
-            styled,
+            fixture_view,
             hide_index=True,
             use_container_width=True
         )
@@ -179,6 +192,7 @@ def show_fixtures():
         )
 
 
+        
 
 # =========================
 # SIDEBAR
