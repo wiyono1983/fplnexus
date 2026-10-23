@@ -1549,85 +1549,213 @@ elif menu == "Captain Picks":
             "🎖 Vice Captain Ownership"
         )
 
-        vice_ownership = (
-            captain_df["Vice Captain"]
-            .value_counts()
-            .reset_index()
+elif menu == "Captain Picks":
+
+    st.title("🧢 Captain Picks")
+
+    LEAGUE_ID = 147447
+
+    try:
+
+        bootstrap = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()
+
+        current_gw = next(
+            e["id"]
+            for e in bootstrap["events"]
+            if e["is_current"]
         )
 
-        vice_ownership.columns = [
-            "Vice Captain",
-            "Managers"
-        ]
+        selected_gw = st.selectbox(
+            "Select Gameweek",
+            list(range(1, current_gw + 1)),
+            index=current_gw - 1
+        )
 
-        vice_ownership["Ownership %"] = (
-            vice_ownership["Managers"]
-            / len(captain_df)
-            * 100
-        ).round(1)
+        players = pd.DataFrame(
+            bootstrap["elements"]
+        )
+
+        player_lookup = dict(
+            zip(
+                players["id"],
+                players["web_name"]
+            )
+        )
+
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        entries = league["standings"]["results"]
+
+        rows = []
+        eo_count = {}
+        captain_count = {}
+
+        for manager in entries:
+
+            try:
+
+                entry_id = manager["entry"]
+
+                picks = requests.get(
+                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{selected_gw}/picks/",
+                    timeout=20
+                ).json()
+
+                if "picks" not in picks:
+                    continue
+
+                captain = None
+                vice = None
+
+                for p in picks["picks"]:
+
+                    player_name = player_lookup.get(
+                        p["element"],
+                        "Unknown"
+                    )
+
+                    eo_count[player_name] = (
+                        eo_count.get(
+                            player_name,
+                            0
+                        ) + 1
+                    )
+
+                    if p["is_captain"]:
+
+                        captain = player_name
+
+                        captain_count[player_name] = (
+                            captain_count.get(
+                                player_name,
+                                0
+                            ) + 1
+                        )
+
+                    if p["is_vice_captain"]:
+
+                        vice = player_name
+
+                rows.append(
+                    {
+                        "Team": manager["entry_name"],
+                        "Manager": manager["player_name"],
+                        "Captain": captain,
+                        "Vice Captain": vice
+                    }
+                )
+
+            except Exception:
+                continue
+
+        captain_df = pd.DataFrame(rows)
+
+        st.write(
+            f"Managers loaded: {len(captain_df)}"
+        )
+
+        if captain_df.empty:
+
+            st.warning(
+                "No captain data found."
+            )
+
+            st.stop()
+
+        st.subheader(
+            f"GW{selected_gw} Captain Picks"
+        )
 
         st.dataframe(
-            vice_ownership,
+            captain_df,
             hide_index=True,
             use_container_width=True
         )
 
         st.divider()
 
-        st.subheader(
-            "📊 Effective Ownership"
+        ownership = (
+            captain_df["Captain"]
+            .value_counts()
+            .reset_index()
         )
+
+        ownership.columns = [
+            "Captain",
+            "Managers"
+        ]
+
+        ownership["Ownership %"] = (
+            ownership["Managers"]
+            / len(captain_df)
+            * 100
+        ).round(1)
+
+        st.subheader(
+            "Captain Ownership"
+        )
+
+        st.dataframe(
+            ownership,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        eo_rows = []
 
         total_managers = len(
             captain_df
         )
 
-        eo_rows = []
+        for player in eo_count:
 
-        for player in player_counts:
-
-            ownership_pct = (
-                player_counts[player]
+            own_pct = round(
+                eo_count[player]
                 / total_managers
-                * 100
+                * 100,
+                1
             )
 
-            captain_pct = (
-                captain_counts.get(
+            cap_pct = round(
+                captain_count.get(
                     player,
                     0
                 )
                 / total_managers
-                * 100
+                * 100,
+                1
             )
 
             eo_rows.append(
                 {
                     "Player": player,
-                    "Ownership %": round(
-                        ownership_pct,
-                        1
-                    ),
-                    "Captain %": round(
-                        captain_pct,
-                        1
-                    ),
+                    "Ownership %": own_pct,
+                    "Captain %": cap_pct,
                     "EO %": round(
-                        ownership_pct
-                        + captain_pct,
+                        own_pct + cap_pct,
                         1
                     )
                 }
             )
 
         eo_df = (
-            pd.DataFrame(
-                eo_rows
-            )
+            pd.DataFrame(eo_rows)
             .sort_values(
                 "EO %",
                 ascending=False
             )
+        )
+
+        st.subheader(
+            "Effective Ownership"
         )
 
         st.dataframe(
@@ -1636,44 +1764,12 @@ elif menu == "Captain Picks":
             use_container_width=True
         )
 
-        st.bar_chart(
-            eo_df.head(10)
-            .set_index(
-                "Player"
-            )["EO %"]
-        )
-
-        st.divider()
-
-        if not eo_df.empty:
-
-            top_eo = eo_df.iloc[0]
-
-            st.success(
-                f"""
-🔥 Highest Effective Ownership
-
-{top_eo['Player']}
-
-EO:
-{top_eo['EO %']}%
-
-Ownership:
-{top_eo['Ownership %']}%
-
-Captain:
-{top_eo['Captain %']}%
-"""
-            )
-
     except Exception as e:
 
         st.error(
             f"Error loading captain picks: {e}"
         )
 
-
-        
           
 
 elif menu == "Transfer Activity":
