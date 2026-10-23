@@ -324,49 +324,173 @@ elif menu == "League Info":
             league["standings"]["results"]
         )
 
-        st.metric(
-            "League ID",
-            LEAGUE_ID
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.metric(
+                "League ID",
+                LEAGUE_ID
+            )
+
+        with col2:
+            st.metric(
+                "Members",
+                len(standings)
+            )
+
+        chip_names = {
+            "wildcard": "Wildcard",
+            "freehit": "Free Hit",
+            "bboost": "Bench Boost",
+            "3xc": "Triple Captain"
+        }
+
+        members = []
+
+        progress = st.progress(0)
+
+        for idx, row in standings.iterrows():
+
+            try:
+
+                entry_id = row["entry"]
+
+                history = requests.get(
+                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/history/",
+                    timeout=20
+                ).json()
+
+                current = history.get(
+                    "current",
+                    []
+                )
+
+                latest_gw = (
+                    current[-1]
+                    if current
+                    else {}
+                )
+
+                hits = latest_gw.get(
+                    "event_transfers_cost",
+                    0
+                )
+
+                gw_points = latest_gw.get(
+                    "points",
+                    0
+                )
+
+                team_value = (
+                    latest_gw.get(
+                        "value",
+                        0
+                    ) / 10
+                )
+
+                chips = history.get(
+                    "chips",
+                    []
+                )
+
+                if chips:
+
+                    last_chip = chips[-1]
+
+                    chip_used = (
+                        f"{chip_names.get(last_chip['name'], last_chip['name'])}"
+                        f" (GW{last_chip['event']})"
+                    )
+
+                else:
+
+                    chip_used = "None"
+
+                members.append(
+                    {
+                        "Rank": row["rank"],
+                        "Team": row["entry_name"],
+                        "Manager": row["player_name"],
+                        "Team ID": entry_id,
+                        "Points": row["total"],
+                        "GW Points": gw_points,
+                        "Hits": f"-{hits}" if hits > 0 else "0",
+                        "Last Chip": chip_used,
+                        "Team Value": f"£{team_value:.1f}m"
+                    }
+                )
+
+                progress.progress(
+                    (idx + 1) / len(standings)
+                )
+
+            except:
+                pass
+
+        progress.empty()
+
+        league_df = pd.DataFrame(
+            members
         )
-
-        st.metric(
-            "Members",
-            len(standings)
-        )
-
-        info_df = standings[
-            [
-                "rank",
-                "entry_name",
-                "player_name",
-                "entry",
-                "total"
-            ]
-        ].copy()
-
-        info_df.columns = [
-            "Rank",
-            "Team Name",
-            "Manager",
-            "Team ID",
-            "Points"
-        ]
 
         st.subheader(
             "League Members"
         )
 
         st.dataframe(
-            info_df,
+            league_df,
             hide_index=True,
             use_container_width=True
         )
+
+        st.divider()
+
+        st.subheader(
+            "🏅 Awards Snapshot"
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            leader = league_df.iloc[0]
+
+            st.metric(
+                "👑 League Leader",
+                leader["Manager"]
+            )
+
+        with col2:
+
+            most_hits = league_df.sort_values(
+                "Hits"
+            ).iloc[0]
+
+            st.metric(
+                "💥 Biggest Hit",
+                most_hits["Manager"]
+            )
+
+        with col3:
+
+            best_gw = league_df.sort_values(
+                "GW Points",
+                ascending=False
+            ).iloc[0]
+
+            st.metric(
+                "🎯 GW Winner",
+                best_gw["Manager"]
+            )
 
     except Exception as e:
 
         st.error(
             f"Error loading league info: {e}"
         )
+
+        
+        
 
 elif menu == "My Team":
 
