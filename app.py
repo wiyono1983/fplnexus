@@ -684,7 +684,7 @@ elif menu == "My Team":
                 )
 
                 report = f"""
-                ⚽ FPL NEXUS TRANSFER REPORT
+⚽ FPL NEXUS TRANSFER REPORT
 
                 SELL PLAYER
                 ❌ {sell_player}
@@ -715,12 +715,12 @@ elif menu == "My Team":
                 {sell_player}
                 IN:
                 {recommended['web_name']}
-
-                Buy Price:
-                £{recommended['Price']:.1f}m
-                Remaining Budget:
-                £{remaining_budget:.1f}m
-                """
+                
+Buy Price:
+£{recommended['Price']:.1f}m
+Remaining Budget:
+£{remaining_budget:.1f}m
+"""
 
                 st.subheader(
                     "📱 Copy To WhatsApp"
