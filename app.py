@@ -117,15 +117,189 @@ def show_fixtures():
 menu = st.sidebar.radio(
     "📋 Menu",
     [
-    "Fixtures",
-    "My Team",
-    "League Info",
-    "Standings",
-    "Statistics",
-    "Captain Picks",
-    "Awards"
+        "Home",
+        "Fixtures",
+        "My Team",
+        "League Info",
+        "Standings",
+        "Statistics",
+        "Captain Picks",
+        "Awards"
     ]
 )
+
+if menu == "Home":
+
+    st.title("⚽ FPL NEXUS")
+
+    st.markdown(
+        """
+        ### Welcome to FPL Nexus
+
+        All-in-one Fantasy Premier League dashboard
+        for fixtures, team analysis, captain picks,
+        league standings and transfer planning.
+        """
+    )
+
+    st.divider()
+
+    try:
+
+        bootstrap = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()
+
+        current_gw = next(
+            e["id"]
+            for e in bootstrap["events"]
+            if e["is_current"]
+        )
+
+        top_player = max(
+            bootstrap["elements"],
+            key=lambda x: x["total_points"]
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Current GW",
+                current_gw
+            )
+
+        with col2:
+            st.metric(
+                "Players",
+                len(
+                    bootstrap["elements"]
+                )
+            )
+
+        with col3:
+            st.metric(
+                "Teams",
+                len(
+                    bootstrap["teams"]
+                )
+            )
+
+        st.divider()
+
+        st.subheader(
+            "🏆 Season Highlights"
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.info(
+                f"""
+                ⭐ Top Scorer
+
+                {top_player['web_name']}
+
+                {top_player['total_points']} pts
+                """
+            )
+
+        with col2:
+            st.info(
+                """
+                🏆 League
+
+                League ID: 147447
+
+                Status: Active
+                """
+            )
+
+        st.divider()
+
+        st.subheader(
+            "🚀 Quick Features"
+        )
+
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            st.success(
+                """
+                📅 Fixtures
+
+                View all upcoming gameweek fixtures
+                and kick-off times.
+                """
+            )
+
+        with c2:
+            st.success(
+                """
+                👤 My Team
+
+                Analyze your squad and get
+                transfer recommendations.
+                """
+            )
+
+        with c3:
+            st.success(
+                """
+                🏆 Standings
+
+                Follow league rankings
+                and top managers.
+                """
+            )
+
+        st.divider()
+
+        st.subheader(
+            "🔥 Available Modules"
+        )
+
+        features = pd.DataFrame(
+            {
+                "Feature": [
+                    "Fixtures",
+                    "My Team",
+                    "Standings",
+                    "Statistics",
+                    "Captain Picks",
+                    "Awards"
+                ],
+                "Status": [
+                    "✅ Ready",
+                    "✅ Ready",
+                    "✅ Ready",
+                    "✅ Ready",
+                    "✅ Ready",
+                    "✅ Ready"
+                ]
+            }
+        )
+
+        st.dataframe(
+            features,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        st.caption(
+            f"Currently viewing Gameweek {current_gw}"
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Unable to load dashboard: {e}"
+        )
+
+elif menu == "Fixtures":
 
 # =========================
 # PAGES
