@@ -447,7 +447,6 @@ elif page == "Rank History":
 # =========================
 # FIXTURES
 # =========================
-
 elif page == "Fixtures":
 
     st.title("📅 Fixtures")
@@ -473,54 +472,64 @@ elif page == "Fixtures":
             fixture_df["team_a"].map(team_lookup)
         )
 
-        gw = st.selectbox(
+        fixture_df = fixture_df.sort_values(
+            by=["event"]
+        )
+
+        gw_list = sorted(
+            fixture_df["event"].dropna().unique()
+        )
+
+        selected_gw = st.selectbox(
             "Gameweek",
-            sorted(fixture_df["event"].dropna().unique())
+            gw_list,
+            index=len(gw_list) - 1
         )
 
         gw_df = fixture_df[
-            fixture_df["event"] == gw
+            fixture_df["event"] == selected_gw
         ]
 
-        st.markdown(f"### GW {gw}")
+        st.markdown(f"### Gameweek {selected_gw}")
 
         for _, row in gw_df.iterrows():
 
-            st.markdown(
-                f"""
-                <div style="
-                    border:1px solid #333;
-                    border-radius:12px;
-                    padding:14px;
-                    margin-bottom:10px;
-                ">
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        font-size:18px;
-                        font-weight:600;
-                    ">
-                        <div style="width:40%;text-align:right;">
-                            {row['Home Team']}
-                        </div>
+            with st.container(border=True):
 
-                        <div style="
-                            width:20%;
-                            text-align:center;
-                            color:#999;
-                        ">
-                            VS
-                        </div>
+                col1, col2, col3 = st.columns(
+                    [5, 2, 5]
+                )
 
-                        <div style="width:40%;text-align:left;">
-                            {row['Away Team']}
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+                with col1:
+                    st.markdown(
+                        f"""
+<div style="text-align:right;font-weight:600;">
+{row['Home Team']}
+</div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                with col2:
+                    st.markdown(
+                        """
+<div style="text-align:center;color:gray;">
+VS
+</div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                with col3:
+                    st.markdown(
+                        f"""
+<div style="text-align:left;font-weight:600;">
+{row['Away Team']}
+</div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
     else:
-        st.warning("Fixture data not available")
+        st.warning("Fixture data tidak tersedia.")
+
