@@ -128,6 +128,11 @@ menu = st.sidebar.radio(
     ]
 )
 
+
+
+# =========================
+# PAGES
+# =========================
 if menu == "Home":
 
     st.title("⚽ FPL NEXUS")
@@ -300,11 +305,6 @@ if menu == "Home":
         )
 
 elif menu == "Fixtures":
-
-# =========================
-# PAGES
-# =========================
-if menu == "Fixtures":
     show_fixtures()
 
 elif menu == "League Info":
