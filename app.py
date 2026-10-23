@@ -3552,91 +3552,118 @@ Average Buy : {new_avg:.2f}
             mime="text/csv"
         )
 
+
+
 elif menu == "Statistics":
 
     st.title("📈 Player Statistics")
 
+    stat_options = [
+        "Goals",
+        "Assists",
+        "Clean Sheets",
+        "Minutes",
+        "Bonus Points",
+        "ICT Index",
+        "Influence",
+        "Creativity",
+        "Threat",
+        "Dream Team",
+        "Yellow Cards",
+        "Red Cards",
+        "Saves",
+        "DefCon"
+    ]
+
+    selected_stat = st.selectbox(
+        "Select Statistic",
+        stat_options
+    )
+
     try:
 
-        stat_choice = st.selectbox(
-            "Select Statistic",
-            [
-                "Goals",
-                "Assists",
-                "Clean Sheets",
-                "Minutes",
-                "Bonus Points",
-                "ICT Index",
-                "Influence",
-                "Creativity",
-                "Threat",
-                "Dream Team",
-                "Yellow Cards",
-                "Red Cards",
-                "Saves",
-                "DefCon"
-            ]
-        )
+        # ==========================
+        # DEFCON
+        # ==========================
+        if selected_stat == "DefCon":
 
-        if stat_choice == "DefCon":
-
-            url = (
-                "https://fpldraft.me/"
-                "fpl-defensive-contributions"
+            tables = pd.read_html(
+                "https://fpldraft.me/fpl-defensive-contributions"
             )
 
-            tables = pd.read_html(url)
-
-            defcon_df = tables[0].copy()
-
-            player_col = defcon_df.columns[0]
-            points_col = defcon_df.columns[-1]
-
-            stats_df = defcon_df[
-                [player_col, points_col]
-            ].copy()
-
-            stats_df.columns = [
-                "Player",
-                "DefCon"
-            ]
-
-            stats_df = stats_df.head(10)
+            raw_df = tables[0]
 
             st.subheader(
                 "🛡️ Top 10 DefCon"
             )
 
             st.dataframe(
-                stats_df,
+                raw_df.head(10),
                 hide_index=True,
                 use_container_width=True
             )
 
-            wa_text = (
-                "🛡️ FPL NEXUS DEFCON TOP 5\n\n"
-            )
+            player_col = None
+            defcon_col = None
 
-            for i, row in enumerate(
-                stats_df.head(5).itertuples(),
-                start=1
+            for col in raw_df.columns:
+
+                col_name = str(col).lower()
+
+                if (
+                    "player" in col_name
+                    and player_col is None
+                ):
+                    player_col = col
+
+                if (
+                    "defcon" in col_name
+                    and "point" in col_name
+                ):
+                    defcon_col = col
+
+            if (
+                player_col is not None
+                and defcon_col is not None
             ):
 
-                wa_text += (
-                    f"{i}. "
-                    f"{row.Player} "
-                    f"({row.DefCon})\n"
+                wa_text = (
+                    "🛡️ FPL DEFCON TOP 5\n\n"
                 )
 
-            st.subheader(
-                "📱 Copy To WhatsApp"
-            )
+                top5 = raw_df[
+                    [player_col, defcon_col]
+                ].head(5)
 
-            st.code(
-                wa_text,
-                language="text"
-            )
+                for idx, row in enumerate(
+                    top5.itertuples(index=False),
+                    start=1
+                ):
 
+                    wa_text += (
+                        f"{idx}. "
+                        f"{row[0]} "
+                        f"({row[1]})\n"
+                    )
+
+                st.subheader(
+                    "📱 Copy To WhatsApp"
+                )
+
+                st.code(
+                    wa_text,
+                    language="text"
+                )
+
+            else:
+
+                st.warning(
+                    "Unable to detect DefCon columns automatically."
+                )
+
+        # ==========================
+        # FPL STANDARD STATS
+        # ==========================
         else:
 
             bootstrap = requests.get(
@@ -3665,7 +3692,7 @@ elif menu == "Statistics":
             }
 
             stat_col = stat_map[
-                stat_choice
+                selected_stat
             ]
 
             stats_df = players[
@@ -3677,16 +3704,16 @@ elif menu == "Statistics":
 
             stats_df.columns = [
                 "Player",
-                stat_choice
+                selected_stat
             ]
 
             stats_df = stats_df.sort_values(
-                stat_choice,
+                selected_stat,
                 ascending=False
             ).head(10)
 
             st.subheader(
-                f"🏆 Top 10 {stat_choice}"
+                f"🏆 Top 10 {selected_stat}"
             )
 
             st.dataframe(
@@ -3696,24 +3723,18 @@ elif menu == "Statistics":
             )
 
             wa_text = (
-                f"⚽ FPL NEXUS {stat_choice.upper()} TOP 5\n\n"
+                f"⚽ FPL {selected_stat.upper()} TOP 5\n\n"
             )
 
-            for i, row in enumerate(
+            for idx, row in enumerate(
                 stats_df.head(5).itertuples(),
                 start=1
             ):
 
-                value = getattr(
-                    row,
-                    stat_choice.replace(
-                        " ",
-                        "_"
-                    )
-                )
+                value = row[2]
 
                 wa_text += (
-                    f"{i}. "
+                    f"{idx}. "
                     f"{row.Player} "
                     f"({value})\n"
                 )
