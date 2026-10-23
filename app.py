@@ -422,7 +422,7 @@ elif menu == "My Team":
             step=1
         )
 
-       if entry_id:
+    if entry_id:
 
 
         try:
