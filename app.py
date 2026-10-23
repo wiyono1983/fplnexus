@@ -1587,6 +1587,16 @@ elif menu == "Transfer Activity":
                 timeout=20
             ).json()
 
+            team_name = entry_data.get(
+                "name",
+                "Unknown"
+            )
+
+            manager_name = (
+                f"{entry_data.get('player_first_name', '')} "
+                f"{entry_data.get('player_last_name', '')}"
+            ).strip()
+
             bank = (
                 entry_data.get(
                     "last_deadline_bank",
@@ -1628,23 +1638,37 @@ elif menu == "Transfer Activity":
             except:
                 pass
 
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.metric(
+                    "🏆 Team",
+                    team_name
+                )
+
+            with col2:
+                st.metric(
+                    "👤 Manager",
+                    manager_name
+                )
+
             col1, col2, col3 = st.columns(3)
 
             with col1:
                 st.metric(
-                    "Bank",
+                    "💰 Bank",
                     f"£{bank:.1f}m"
                 )
 
             with col2:
                 st.metric(
-                    "Transfers",
+                    "🔄 Transfers",
                     len(gw_transfers)
                 )
 
             with col3:
                 st.metric(
-                    "Active Chip",
+                    "🎯 Active Chip",
                     active_chip
                 )
 
@@ -1691,13 +1715,15 @@ elif menu == "Transfer Activity":
 
                 whatsapp_report = (
                     f"⚽ FPL NEXUS GW{selected_gw}\n\n"
-                    f"Team ID: {entry_id}\n"
+                    f"Team: {team_name}\n"
+                    f"Manager: {manager_name}\n"
+                    f"Team ID: {entry_id}\n\n"
                     f"Bank: £{bank:.1f}m\n"
-                    f"Active Chip: {active_chip}\n\n"
-                    f"Transfers Made: {len(gw_transfers)}\n\n"
+                    f"Active Chip: {active_chip}\n"
+                    f"Transfers: {len(gw_transfers)}\n\n"
                 )
 
-                for idx, row in transfer_df.iterrows():
+                for _, row in transfer_df.iterrows():
 
                     whatsapp_report += (
                         f"OUT: {row['OUT']}\n"
@@ -1724,4 +1750,4 @@ elif menu == "Transfer Activity":
             st.error(
                 f"Error loading transfers: {e}"
             )
-
+           
