@@ -1,6 +1,85 @@
 import streamlit as st
 import pandas as pd
 import requests
+import streamlit as st
+
+# ===== SIDEBAR =====
+menu = st.sidebar.radio(
+    "📋 Menu",
+    [
+        "Fixtures",
+        "League Info",
+        "Standings",
+        "Statistics",
+        "Captain Picks",
+        "Awards"
+    ]
+)
+
+# ===== FIXTURES (KODE LAMA JANGAN DIUBAH) =====
+if menu == "Fixtures":
+    # SELURUH KODE FIXTURES YANG SUDAH ADA
+    show_fixtures()
+
+# ===== LEAGUE INFO =====
+elif menu == "League Info":
+    st.title("🏆 League Info")
+    st.info("FPL League ID: 147447")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("League ID", "147447")
+
+    with col2:
+        st.metric("Status", "Active")
+
+    st.subheader("Tentang Liga")
+    st.write("""
+    Halaman ini berisi informasi umum liga,
+    statistik peserta, dan ringkasan kompetisi.
+    """)
+
+# ===== STANDINGS =====
+elif menu == "Standings":
+    st.title("📊 Standings")
+
+    st.write(
+        "Tampilkan klasemen FPL league di sini."
+    )
+
+# ===== STATISTICS =====
+elif menu == "Statistics":
+    st.title("📈 Statistics")
+
+    st.write("""
+    - Average GW Score
+    - Highest Weekly Score
+    - Most Captain Points
+    - Transfer Statistics
+    """)
+
+# ===== CAPTAIN PICKS =====
+elif menu == "Captain Picks":
+    st.title("🧢 Captain Picks")
+
+    st.write(
+        "Menampilkan captain yang paling banyak dipilih peserta."
+    )
+
+# ===== AWARDS =====
+elif menu == "Awards":
+    st.title("🏅 Awards")
+
+    st.write("""
+    🥇 Best Manager of the Week
+
+    🚀 Biggest Rank Climber
+
+    ⚽ Highest GW Score
+
+    🎯 Best Captain Pick
+    """)
 
 st.set_page_config(
     page_title="FPL Fixtures",
