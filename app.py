@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
+import yfinance as yf
 import requests
 import matplotlib.pyplot as plt
 from io import BytesIO
+
 
  
 st.set_page_config(
@@ -2695,7 +2697,7 @@ elif menu == "Best XI":
    
 elif menu == "IDX Nexus":
 
-    import yfinance as yf
+    
 
     st.title("📈 IDX NEXUS")
 
