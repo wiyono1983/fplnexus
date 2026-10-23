@@ -2733,7 +2733,8 @@ elif menu == "IDX Nexus":
         [
             "Watchlist",
             "Stock Detail",
-            "Compare Stocks"
+            "Compare Stocks",
+            "Value Screener"
         ],
         horizontal=True
     )
