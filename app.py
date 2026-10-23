@@ -117,31 +117,31 @@ def show_fixtures():
 
            def get_status(row):
 
-            kickoff = row[
-                "kickoff_time"
-            ]
+               kickoff = row[
+                  "kickoff_time"
+               ]
 
-            if pd.isna(kickoff):
-                return "-"
+               if pd.isna(kickoff):
+                   return "-"
 
-            diff_hours = (
-                now - kickoff
-            ).total_seconds() / 3600
+               diff_hours = (
+                   now - kickoff
+               ).total_seconds() / 3600
 
-            if row.get(
-                "finished",
-                False
-            ):
-                return "FT"
+               if row.get(
+                   "finished",
+                   False
+               ):
+                   return "FT"
 
-            if (
-                0 <= diff_hours < 2
-            ):
-                return "LIVE"
+               if (
+                   0 <= diff_hours < 2
+               ):
+                   return "LIVE"
 
-            return kickoff.strftime(
-                "%H:%M"
-            )
+               return kickoff.strftime(
+                   "%H:%M"
+               )
 
             gw_df["Kick Off"] = (
                gw_df.apply(
