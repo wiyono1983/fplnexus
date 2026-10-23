@@ -569,26 +569,22 @@ elif menu == "League Info":
 
             ax.axis("off")
 
-            lengths = []
+            # Fixed FPL-style column widths
+width_map = {
+    "Rank": 0.08,
+    "Δ Rank": 0.08,
+    "Team": 0.38,
+    "Points": 0.12,
+    "GW Points": 0.12,
+    "Hits": 0.08,
+    "Remaining Chips": 0.22
+}
 
-            for col in export_df.columns:
+col_widths = [
+    width_map.get(col, 0.15)
+    for col in export_df.columns
+]
 
-                max_len = max(
-                    export_df[col]
-                    .astype(str)
-                    .str.len()
-                    .max(),
-                    len(col)
-                )
-
-                lengths.append(max_len)
-
-            total = sum(lengths)
-
-            col_widths = [
-                x / total
-                for x in lengths
-            ]
 
             table = ax.table(
                 cellText=export_df.values,
