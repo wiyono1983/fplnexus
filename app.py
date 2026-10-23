@@ -2061,11 +2061,13 @@ elif menu == "Transfer Trends":
             st.info(
                 "No transfers found."
             )
-       except Exception as e:
 
-                st.error(
-                   f"Error loading trends: {e}"
-                )     
+    except Exception as e:
+
+        st.error(
+            f"Error loading trends: {e}"
+        )
+
      
 
 elif menu == "Rival Analyzer":
