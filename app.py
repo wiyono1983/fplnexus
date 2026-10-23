@@ -443,7 +443,6 @@ elif page == "Rank History":
             fig,
             use_container_width=True
         )
-
 # =========================
 # FIXTURES
 # =========================
@@ -508,28 +507,15 @@ elif page == "Fixtures":
 
             for _, row in gw_df.iterrows():
 
-    kickoff = row[
-        "kickoff_time"
-    ].strftime("%H:%M")
+                kickoff = row[
+                    "kickoff_time"
+                ].strftime("%H:%M")
 
-    col1, col2, col3 = st.columns(
-        [4, 2, 4]
-    )
+                home = row["Home Team"]
+                away = row["Away Team"]
 
-    with col1:
-        st.markdown(
-            f"<div style='text-align:right'>{row['Home Team']}</div>",
-            unsafe_allow_html=True
-        )
+                st.write(
+                    f"{home:<20} {kickoff} {away}"
+                )
 
-    with col2:
-        st.markdown(
-            f"<div style='text-align:center'><b>{kickoff}</b></div>",
-            unsafe_allow_html=True
-        )
-
-    with col3:
-        st.markdown(
-            f"<div style='text-align:left'>{row['Away Team']}</div>",
-            unsafe_allow_html=True
-        )
+        
