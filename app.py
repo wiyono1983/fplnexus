@@ -559,58 +559,58 @@ elif menu == "My Team":
             )
             st.divider()
 
-st.subheader(
-    "⚔️ Compare 2 Players To Sell"
-)
+            st.subheader(
+              "⚔️ Compare 2 Players To Sell"
+            )
 
-col1, col2 = st.columns(2)
+            col1, col2 = st.columns(2)
 
-with col1:
+            with col1:
 
-    compare_1 = st.selectbox(
-        "Player 1",
-        squad_df["Player"],
-        key="compare_1"
-    )
+            compare_1 = st.selectbox(
+              "Player 1",
+              squad_df["Player"],
+              key="compare_1"
+            )
 
-with col2:
+            with col2:
 
-    compare_2 = st.selectbox(
-        "Player 2",
-        squad_df["Player"],
-        index=1 if len(squad_df) > 1 else 0,
-        key="compare_2"
-    )
+             compare_2 = st.selectbox(
+               "Player 2",
+               squad_df["Player"],
+               index=1 if len(squad_df) > 1 else 0,
+               key="compare_2"
+            )
 
-if compare_1 != compare_2:
+           if compare_1 != compare_2:
 
-    p1 = squad_df[
-        squad_df["Player"] == compare_1
-    ].iloc[0]
+              p1 = squad_df[
+                squad_df["Player"] == compare_1
+              ].iloc[0]
+ 
+              p2 = squad_df[
+                squad_df["Player"] == compare_2
+              ].iloc[0]
 
-    p2 = squad_df[
-        squad_df["Player"] == compare_2
-    ].iloc[0]
-
-    compare_df = pd.DataFrame(
-        [
-            {
+           compare_df = pd.DataFrame(
+            [
+              {
                 "Metric": "Price",
                 compare_1: p1["Price"],
                 compare_2: p2["Price"]
-            },
-            {
+              },
+             {
                 "Metric": "Points",
                 compare_1: p1["Points"],
                 compare_2: p2["Points"]
-            },
-            {
+             },
+             {
                 "Metric": "Form",
                 compare_1: p1["Form"],
                 compare_2: p2["Form"]
-            }
-        ]
-    )
+             }
+           ]
+        )
 
     st.dataframe(
         compare_df,
