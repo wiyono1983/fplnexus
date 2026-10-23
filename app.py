@@ -87,8 +87,15 @@ players = players.merge(
     teams[["id", "name"]],
     left_on="team",
     right_on="id",
-    how="left"
+    how="left",
+    suffixes=("", "_team")
 )
+
+players.rename(
+    columns={"id_x": "player_id"},
+    inplace=True
+)
+
 
 # =========================
 # CURRENT GW
@@ -224,15 +231,12 @@ elif page == "My Team":
             squad["picks"]
         )
 
-        team = pd.merge(
-    picks,
+        team = picks.merge(
     players,
     left_on="element",
-    right_on="player_id",
-    how="left"
+    right_on="player_id"
+)
 
-
-        )
 
         squad_view = team[
             [
