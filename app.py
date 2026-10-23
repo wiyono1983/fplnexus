@@ -38,8 +38,13 @@ def show_fixtures():
 
         bootstrap, fixtures = load_data()
 
-        teams = pd.DataFrame(bootstrap["teams"])
-        fixture_df = pd.DataFrame(fixtures)
+        teams = pd.DataFrame(
+            bootstrap["teams"]
+        )
+
+        fixture_df = pd.DataFrame(
+            fixtures
+        )
 
         team_lookup = dict(
             zip(
@@ -48,8 +53,15 @@ def show_fixtures():
             )
         )
 
-        fixture_df["Home"] = fixture_df["team_h"].map(team_lookup)
-        fixture_df["Away"] = fixture_df["team_a"].map(team_lookup)
+        fixture_df["Home"] = (
+            fixture_df["team_h"]
+            .map(team_lookup)
+        )
+
+        fixture_df["Away"] = (
+            fixture_df["team_a"]
+            .map(team_lookup)
+        )
 
         fixture_df["kickoff_time"] = (
             pd.to_datetime(
@@ -57,7 +69,9 @@ def show_fixtures():
                 utc=True,
                 errors="coerce"
             )
-            .dt.tz_convert("Asia/Jakarta")
+            .dt.tz_convert(
+                "Asia/Jakarta"
+            )
         )
 
         gw_list = sorted(
@@ -95,23 +109,67 @@ def show_fixtures():
             f"{start_date} - {end_date}"
         )
 
-        gw_df["KO"] = (
+        gw_df["Kick Off"] = (
             gw_df["kickoff_time"]
             .dt.strftime("%H:%M")
         )
 
+        gw_df["Score"] = gw_df.apply(
+            lambda x:
+            f"{int(x['team_h_score'])}-{int(x['team_a_score'])}"
+            if pd.notna(
+                x["team_h_score"]
+            )
+            and pd.notna(
+                x["team_a_score"]
+            )
+            else "vs",
+            axis=1
+        )
+
         fixture_view = gw_df[
-            ["Home", "KO", "Away"]
+            [
+                "Kick Off",
+                "Home",
+                "Score",
+                "Away"
+            ]
+        ].copy()
+
+        fixture_view.columns = [
+            "Kick Off",
+            "Home Team",
+            "Score",
+            "Away Team"
         ]
 
+        styled = (
+            fixture_view
+            .style
+            .set_properties(
+                subset=[
+                    "Kick Off",
+                    "Score"
+                ],
+                **{
+                    "text-align":
+                    "center"
+                }
+            )
+        )
+
         st.dataframe(
-            fixture_view,
+            styled,
             hide_index=True,
             use_container_width=True
         )
 
     except Exception as e:
-        st.error(f"Error: {e}")
+
+        st.error(
+            f"Error: {e}"
+        )
+
 
 
 # =========================
