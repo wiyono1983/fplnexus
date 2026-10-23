@@ -32,9 +32,9 @@ def load_data():
 
     return bootstrap, fixtures
 
-def show_fixtures():
+    def show_fixtures():
 
-    st.title("⚽ FPL Fixtures")
+       st.title("⚽ FPL Fixtures")
 
     try:
 
