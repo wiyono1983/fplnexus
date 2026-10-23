@@ -377,13 +377,53 @@ elif menu == "My Team":
 
     st.title("👤 My Team")
 
+LEAGUE_ID = 147447
+
+lookup_method = st.radio(
+    "Lookup Method",
+    [
+        "Team Name",
+        "FPL Team ID"
+    ],
+    horizontal=True
+)
+
+if lookup_method == "Team Name":
+
+    league = requests.get(
+        f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+        timeout=20
+    ).json()
+
+    standings = pd.DataFrame(
+        league["standings"]["results"]
+    )
+
+    team_options = sorted(
+        standings["entry_name"].tolist()
+    )
+
+    selected_team = st.selectbox(
+        "🏆 Select Team",
+        team_options
+    )
+
+    entry_id = standings.loc[
+        standings["entry_name"]
+        == selected_team,
+        "entry"
+    ].iloc[0]
+
+else:
+
     entry_id = st.number_input(
-        "Enter FPL Team ID",
+        "FPL Team ID",
         min_value=1,
         step=1
     )
 
-    if entry_id:
+if entry_id:
+
 
         try:
 
@@ -414,6 +454,17 @@ elif menu == "My Team":
                 f"https://fantasy.premierleague.com/api/entry/{entry_id}/",
                 timeout=20
             ).json()
+
+            team_name = entry_data.get(
+                "name",
+                "Unknown"
+            )
+
+            manager_name = (
+               f"{entry_data.get('player_first_name', '')} "
+               f"{entry_data.get('player_last_name', '')}"
+            ).strip()
+
 
             bank = (
                 entry_data.get(
@@ -466,6 +517,27 @@ elif menu == "My Team":
                 .to_dict()
             )
 
+            col1, col2, col3 = st.columns(3)
+
+              with col1:
+                 st.metric(
+                   "🏆 Team",
+                   team_name
+                 )
+
+              with col2:
+                 st.metric(
+                   "👤 Manager",
+                   manager_name
+                 )
+
+              with col3:
+                st.metric(
+                  "🆔 Team ID",
+                  entry_id
+                )
+
+         
             st.subheader(
                 f"My Squad - GW {current_gw}"
             )
