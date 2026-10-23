@@ -90,7 +90,8 @@ try:
     )
 
     
-        for _, row in gw_df.iterrows():
+        
+            for _, row in gw_df.iterrows():
 
     kickoff = "--:--"
 
@@ -99,19 +100,13 @@ try:
 
     st.markdown(
         f"""
-        <div style="
-            text-align:center;
-            padding:4px 0;
-        ">
-            {row['Home Team']}
-            &nbsp;&nbsp;
-            <b>{kickoff}</b>
-            &nbsp;&nbsp;
-            {row['Away Team']}
+        <div style="text-align:center;">
+            {row['Home Team']} <b>{kickoff}</b> {row['Away Team']}
         </div>
         """,
         unsafe_allow_html=True
     )
+
 
 except Exception as e:
     st.error(
