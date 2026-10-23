@@ -656,7 +656,7 @@ elif menu == "My Team":
                    f"{sell_score_2}/3"
                 )
 
-           if sell_score_1 > sell_score_2:
+            if sell_score_1 > sell_score_2:
 
                 st.error(
                    f"""
