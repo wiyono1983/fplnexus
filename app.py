@@ -197,7 +197,7 @@ menu = st.sidebar.radio(
         "Transfer Activity",
         "Transfer Trends",
         "IDX Nexus",
-        "Yahoo Finance Tester"
+        "Yahoo Finance Tester",
         "MyPorto"
     ]
 )
