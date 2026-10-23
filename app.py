@@ -573,7 +573,7 @@ elif menu == "League Info":
             width_map = {
                 "Rank": 0.08,
                 "Δ Rank": 0.08,
-                "Team": 0.38,
+                "Team": 0.18,
                 "Points": 0.12,
                 "GW Points": 0.12,
                 "Hits": 0.08,
