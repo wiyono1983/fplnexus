@@ -115,7 +115,7 @@ def show_fixtures():
               tz="Asia/Jakarta"
            )
 
-        def get_status(row):
+       def get_status(row):
 
             kickoff = row[
                 "kickoff_time"
