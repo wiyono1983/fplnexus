@@ -155,11 +155,7 @@ elif menu == "Statistics":
 elif menu == "Captain Picks":
     st.title("🧢 Captain Picks")
     st.write("Captain terpopuler.")
-    elif menu == "Captain Picks":
-
-    st.title("🧢 Captain Picks")
-
-    LEAGUE_ID = 147447
+  LEAGUE_ID = 147447
 
     try:
 
