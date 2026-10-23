@@ -3101,233 +3101,186 @@ elif menu == "MyPorto":
             "No stocks added yet."
         )
 
-elif idx_menu == "IDX Nexus":
+elif menu == "IDX Nexus":
 
     import yfinance as yf
 
-    st.subheader(
-        "📊 Portfolio Dashboard"
+    st.title(
+        "📈 IDX Nexus"
     )
 
     if (
         "portfolio"
         not in st.session_state
-        or
-        len(
-            st.session_state.portfolio
-        ) == 0
     ):
 
-        st.warning(
-            "No portfolio found. Add stocks first."
-        )
+        st.session_state.portfolio = []
 
-    else:
+    idx_menu = st.radio(
+        "Module",
+        [
+            "Dashboard",
+            "Stock Detail",
+            "Compare Stocks",
+            "Yahoo Finance Tester"
+        ],
+        horizontal=True
+    )
+    if idx_menu == "Dashboard":
 
-        rows = []
+        if not st.session_state.portfolio:
 
-        total_cost = 0
-        total_value = 0
+            st.warning(
+                "Add stocks inside MyPorto first."
+            )
 
-        for position in st.session_state.portfolio:
+        else:
 
-            try:
+            rows = []
 
-                ticker = (
-                    position["Ticker"]
-                    + ".JK"
-                )
+            total_value = 0
+            total_cost = 0
 
-                stock = yf.Ticker(
-                    ticker
-                )
+            for p in st.session_state.portfolio:
 
-                info = stock.info
+                try:
 
-                current_price = (
-                    info.get(
-                        "currentPrice"
-                    ) or 0
-                )
+                    ticker = (
+                        p["Ticker"]
+                        + ".JK"
+                    )
 
-                shares = (
-                    position["Lot"]
-                    * 100
-                )
+                    info = yf.Ticker(
+                        ticker
+                    ).info
 
-                cost_value = (
-                    shares
-                    * position[
-                        "Avg Buy"
-                    ]
-                )
+                    current = (
+                        info.get(
+                            "currentPrice"
+                        ) or 0
+                    )
 
-                market_value = (
-                    shares
-                    * current_price
-                )
+                    shares = (
+                        p["Lot"]
+                        * 100
+                    )
 
-                pnl = (
-                    market_value
-                    - cost_value
-                )
+                    cost = (
+                        p["Avg Buy"]
+                        * shares
+                    )
 
-                pnl_pct = 0
+                    value = (
+                        current
+                        * shares
+                    )
 
-                if cost_value > 0:
+                    pnl = (
+                        value
+                        - cost
+                    )
 
-                    pnl_pct = round(
-                        (
+                    pnl_pct = 0
+
+                    if cost:
+
+                        pnl_pct = round(
                             pnl
                             /
-                            cost_value
+                            cost
+                            * 100,
+                            2
                         )
-                        * 100,
-                        2
+
+                    total_cost += cost
+                    total_value += value
+
+                    rows.append(
+                        {
+                            "Ticker":
+                            p["Ticker"],
+
+                            "Current":
+                            current,
+
+                            "Lot":
+                            p["Lot"],
+
+                            "Avg Buy":
+                            p["Avg Buy"],
+
+                            "P/L":
+                            round(
+                                pnl
+                            ),
+
+                            "P/L %":
+                            pnl_pct
+                        }
                     )
 
-                total_cost += cost_value
-                total_value += market_value
+                except:
+                    pass
 
-                rows.append(
-                    {
-                        "Ticker":
-                        position["Ticker"],
-
-                        "Lot":
-                        position["Lot"],
-
-                        "Avg Buy":
-                        position[
-                            "Avg Buy"
-                        ],
-
-                        "Current":
-                        current_price,
-
-                        "Market Value":
-                        round(
-                            market_value
-                        ),
-
-                        "P/L":
-                        round(
-                            pnl
-                        ),
-
-                        "P/L %":
-                        pnl_pct
-                    }
-                )
-
-            except:
-                pass
-
-        portfolio_df = pd.DataFrame(
-            rows
-        )
-
-        total_pl = (
-            total_value
-            - total_cost
-        )
-
-        col1, col2, col3, col4 = st.columns(4)
-
-        with col1:
-
-            st.metric(
-                "Positions",
-                len(
-                    portfolio_df
-                )
+            portfolio_df = pd.DataFrame(
+                rows
             )
 
-        with col2:
+            col1,col2,col3 = st.columns(3)
 
-            st.metric(
-                "Portfolio Value",
-                f"Rp {total_value:,.0f}"
-            )
+            with col1:
 
-        with col3:
-
-            st.metric(
-                "Total P/L",
-                f"Rp {total_pl:,.0f}"
-            )
-
-        with col4:
-
-            pct = 0
-
-            if total_cost > 0:
-
-                pct = round(
-                    (
-                        total_pl
-                        /
-                        total_cost
+                st.metric(
+                    "Positions",
+                    len(
+                        portfolio_df
                     )
-                    * 100,
-                    2
                 )
 
-            st.metric(
-                "Return %",
-                f"{pct}%"
+            with col2:
+
+                st.metric(
+                    "Portfolio Value",
+                    f"{total_value:,.0f}"
+                )
+
+            with col3:
+
+                st.metric(
+                    "Total Return",
+                    f"{(total_value-total_cost):,.0f}"
+                )
+
+            st.dataframe(
+                portfolio_df,
+                hide_index=True,
+                use_container_width=True
+            )
+    elif idx_menu == "Stock Detail":
+
+        tickers = [
+            p["Ticker"]
+            for p
+            in st.session_state.portfolio
+        ]
+
+        if not tickers:
+
+            st.warning(
+                "Portfolio empty."
             )
 
-        st.divider()
+        else:
 
-        st.dataframe(
-            portfolio_df,
-            hide_index=True,
-            use_container_width=True
-        )
-
-        st.divider()
-
-        winner = (
-            portfolio_df
-            .sort_values(
-                "P/L %",
-                ascending=False
-            )
-            .iloc[0]
-        )
-
-        loser = (
-            portfolio_df
-            .sort_values(
-                "P/L %"
-            )
-            .iloc[0]
-        )
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            st.success(
-                f"""
-🚀 Top Winner
-
-{winner['Ticker']}
-
-{winner['P/L %']}%
-"""
+            selected = st.selectbox(
+                "Stock",
+                tickers
             )
 
-        with col2:
+            info = yf.Ticker(
+                selected + ".JK"
+            ).info
 
-            st.error(
-                f"""
-📉 Top Loser
+            st.json(info)
 
-{loser['Ticker']}
-
-{loser['P/L %']}%
-"""
-            )
-
+                        
