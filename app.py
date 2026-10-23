@@ -308,16 +308,65 @@ elif menu == "Fixtures":
     show_fixtures()
 
 elif menu == "League Info":
+
     st.title("🏆 League Info")
-    st.info("FPL League ID: 147447")
 
-    col1, col2 = st.columns(2)
+    LEAGUE_ID = 147447
 
-    with col1:
-        st.metric("League ID", "147447")
+    try:
 
-    with col2:
-        st.metric("Status", "Active")
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        standings = pd.DataFrame(
+            league["standings"]["results"]
+        )
+
+        st.metric(
+            "League ID",
+            LEAGUE_ID
+        )
+
+        st.metric(
+            "Members",
+            len(standings)
+        )
+
+        info_df = standings[
+            [
+                "rank",
+                "entry_name",
+                "player_name",
+                "entry",
+                "total"
+            ]
+        ].copy()
+
+        info_df.columns = [
+            "Rank",
+            "Team Name",
+            "Manager",
+            "Team ID",
+            "Points"
+        ]
+
+        st.subheader(
+            "League Members"
+        )
+
+        st.dataframe(
+            info_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading league info: {e}"
+        )
 
 elif menu == "My Team":
 
