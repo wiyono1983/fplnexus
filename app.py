@@ -32,167 +32,6 @@ def load_data():
 
     return bootstrap, fixtures
 
-def show_fixtures():
-
-       st.title("⚽ FPL Fixtures")
-
-       try:
-
-           bootstrap, fixtures = load_data()
-
-           teams = pd.DataFrame(
-              bootstrap["teams"]
-           )
-
-           fixture_df = pd.DataFrame(
-              fixtures
-           )
-
-           team_lookup = dict(
-             zip(
-                teams["id"],
-                teams["name"]
-             )
-           )
-
-           fixture_df["Home"] = (
-              fixture_df["team_h"]
-              .map(team_lookup)
-           )
-
-           fixture_df["Away"] = (
-              fixture_df["team_a"]
-              .map(team_lookup)
-           )
-
-           fixture_df["kickoff_time"] = (
-               pd.to_datetime(
-                  fixture_df["kickoff_time"],
-                  utc=True,
-                  errors="coerce"
-            )
-              .dt.tz_convert(
-                "Asia/Jakarta"
-              )
-           )
-
-           gw_list = sorted(
-              fixture_df["event"]
-              .dropna()
-              .unique()
-           )
-
-           gw = st.selectbox(
-              "Gameweek",
-              gw_list
-           )
-
-           gw_df = fixture_df[
-              fixture_df["event"] == gw
-           ].copy()
-
-           st.subheader(
-              f"Gameweek {gw}"
-           )
-
-           start_date = (
-              gw_df["kickoff_time"]
-              .min()
-              .strftime("%d %b")
-           )
-
-           end_date = (
-              gw_df["kickoff_time"]
-              .max()
-              .strftime("%d %b %Y")
-           )
-
-           st.caption(
-              f"{start_date} - {end_date}"
-           )
-
-           now = pd.Timestamp.now(
-              tz="Asia/Jakarta"
-           )
-
-           def get_status(row):
-
-               kickoff = row[
-                  "kickoff_time"
-               ]
-
-               if pd.isna(kickoff):
-                   return "-"
-
-               diff_hours = (
-                   now - kickoff
-               ).total_seconds() / 3600
-
-               if row.get(
-                   "finished",
-                   False
-               ):
-                   return "FT"
-
-               if (
-                   0 <= diff_hours < 2
-               ):
-                   return "LIVE"
-
-               return kickoff.strftime(
-                   "%H:%M"
-               )
-
-           gw_df["Kick Off"] = (
-               gw_df.apply(
-                  get_status,
-                  axis=1
-               )
-            )
-
-           gw_df["Score"] = gw_df.apply(
-               lambda x:
-               f"{int(x['team_h_score'])}-{int(x['team_a_score'])}"
-               if pd.notna(
-                   x["team_h_score"]
-               )
-               and pd.notna(
-                   x["team_a_score"]
-               )
-               else "vs",
-               axis=1
-            )
-
-           fixture_view = gw_df[
-              [
-                  "Kick Off",
-                  "Home",
-                  "Score",
-                  "Away"
-              ]
-            ].copy()
-
-           fixture_view.columns = [
-              "Status",
-              "Home Team",
-              "Score",
-              "Away Team"
-            ]
-
-           st.dataframe(
-               fixture_view,
-               hide_index=True,
-               use_container_width=True
-            )
-
-       except Exception as e:
-
-              st.error(
-                f"Error: {e}"
-            )
-
-
-        
 
 # =========================
 # SIDEBAR
@@ -5460,4 +5299,156 @@ Differentials:
 
         st.error(
             f"Error loading rival analysis: {e}"
+        )
+def show_fixtures():
+
+    st.title("⚽ FPL Fixtures")
+
+    try:
+
+        bootstrap, fixtures = load_data()
+
+        teams = pd.DataFrame(
+            bootstrap["teams"]
+        )
+
+        fixture_df = pd.DataFrame(
+            fixtures
+        )
+
+        team_lookup = dict(
+            zip(
+                teams["id"],
+                teams["name"]
+            )
+        )
+
+        fixture_df["Home"] = (
+            fixture_df["team_h"]
+            .map(team_lookup)
+        )
+
+        fixture_df["Away"] = (
+            fixture_df["team_a"]
+            .map(team_lookup)
+        )
+
+        fixture_df["kickoff_time"] = (
+            pd.to_datetime(
+                fixture_df["kickoff_time"],
+                utc=True,
+                errors="coerce"
+            )
+            .dt.tz_convert(
+                "Asia/Jakarta"
+            )
+        )
+
+        gw_list = sorted(
+            fixture_df["event"]
+            .dropna()
+            .unique()
+        )
+
+        gw = st.selectbox(
+            "Gameweek",
+            gw_list
+        )
+
+        gw_df = fixture_df[
+            fixture_df["event"] == gw
+        ].copy()
+
+        st.subheader(
+            f"Gameweek {gw}"
+        )
+
+        start_date = (
+            gw_df["kickoff_time"]
+            .min()
+            .strftime("%d %b")
+        )
+
+        end_date = (
+            gw_df["kickoff_time"]
+            .max()
+            .strftime("%d %b %Y")
+        )
+
+        st.caption(
+            f"{start_date} - {end_date}"
+        )
+
+        def get_status(row):
+
+            kickoff = row[
+                "kickoff_time"
+            ]
+
+            if pd.isna(kickoff):
+                return "-"
+
+            # Official FPL Status
+            if row.get(
+                "finished",
+                False
+            ):
+                return "FT"
+
+            if row.get(
+                "started",
+                False
+            ):
+                return "🔴 LIVE"
+
+            return kickoff.strftime(
+                "%H:%M"
+            )
+
+        gw_df["Status"] = (
+            gw_df.apply(
+                get_status,
+                axis=1
+            )
+        )
+
+        gw_df["Score"] = gw_df.apply(
+            lambda x:
+            f"{int(x['team_h_score'])}-{int(x['team_a_score'])}"
+            if pd.notna(
+                x["team_h_score"]
+            )
+            and pd.notna(
+                x["team_a_score"]
+            )
+            else "vs",
+            axis=1
+        )
+
+        fixture_view = gw_df[
+            [
+                "Status",
+                "Home",
+                "Score",
+                "Away"
+            ]
+        ].copy()
+
+        fixture_view.columns = [
+            "Status",
+            "Home Team",
+            "Score",
+            "Away Team"
+        ]
+
+        st.dataframe(
+            fixture_view,
+            hide_index=True,
+            use_container_width=True
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Error: {e}"
         )
