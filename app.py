@@ -1720,219 +1720,6 @@ elif menu == "Transfer Activity":
             )
 
 
-elif menu == "Rival Analyzer":
-
-    st.title("⚔️ Rival Analyzer")
-
-    LEAGUE_ID = 147447
-
-    try:
-
-        league = requests.get(
-            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
-            timeout=20
-        ).json()
-
-        standings = pd.DataFrame(
-            league["standings"]["results"]
-        )
-
-        teams = sorted(
-            standings["entry_name"].tolist()
-        )
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            team_a = st.selectbox(
-                "Team A",
-                teams,
-                index=0
-            )
-
-        with col2:
-
-            team_b = st.selectbox(
-                "Team B",
-                teams,
-                index=min(1, len(teams)-1)
-            )
-
-        if team_a != team_b:
-
-            bootstrap = requests.get(
-                "https://fantasy.premierleague.com/api/bootstrap-static/",
-                timeout=20
-            ).json()
-
-            current_gw = next(
-                e["id"]
-                for e in bootstrap["events"]
-                if e["is_current"]
-            )
-
-            players = pd.DataFrame(
-                bootstrap["elements"]
-            )
-
-            player_lookup = dict(
-                zip(
-                    players["id"],
-                    players["web_name"]
-                )
-            )
-
-            entry_a = standings.loc[
-                standings["entry_name"]
-                == team_a,
-                "entry"
-            ].iloc[0]
-
-            entry_b = standings.loc[
-                standings["entry_name"]
-                == team_b,
-                "entry"
-            ].iloc[0]
-
-            picks_a = requests.get(
-                f"https://fantasy.premierleague.com/api/entry/{entry_a}/event/{current_gw}/picks/",
-                timeout=20
-            ).json()
-
-            picks_b = requests.get(
-                f"https://fantasy.premierleague.com/api/entry/{entry_b}/event/{current_gw}/picks/",
-                timeout=20
-            ).json()
-
-            squad_a = {
-                player_lookup[p["element"]]
-                for p in picks_a["picks"]
-            }
-
-            squad_b = {
-                player_lookup[p["element"]]
-                for p in picks_b["picks"]
-            }
-
-            common_players = sorted(
-                squad_a & squad_b
-            )
-
-            only_a = sorted(
-                squad_a - squad_b
-            )
-
-            only_b = sorted(
-                squad_b - squad_a
-            )
-
-            st.subheader(
-                "🤝 Common Players"
-            )
-
-            common_df = pd.DataFrame(
-                {
-                    "Player": common_players
-                }
-            )
-
-            st.metric(
-                "Common Players",
-                len(common_players)
-            )
-
-            st.dataframe(
-                common_df,
-                hide_index=True,
-                use_container_width=True
-            )
-
-            st.divider()
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-
-                st.subheader(
-                    f"🔵 Only {team_a}"
-                )
-
-                only_a_df = pd.DataFrame(
-                    {
-                        "Player": only_a
-                    }
-                )
-
-                st.metric(
-                    "Unique Picks",
-                    len(only_a)
-                )
-
-                st.dataframe(
-                    only_a_df,
-                    hide_index=True,
-                    use_container_width=True
-                )
-
-            with col2:
-
-                st.subheader(
-                    f"🟠 Only {team_b}"
-                )
-
-                only_b_df = pd.DataFrame(
-                    {
-                        "Player": only_b
-                    }
-                )
-
-                st.metric(
-                    "Unique Picks",
-                    len(only_b)
-                )
-
-                st.dataframe(
-                    only_b_df,
-                    hide_index=True,
-                    use_container_width=True
-                )
-
-            st.divider()
-
-            similarity = round(
-                len(common_players)
-                / max(
-                    len(
-                        squad_a | squad_b
-                    ),
-                    1
-                )
-                * 100,
-                1
-            )
-
-            st.success(
-                f"""
-Similarity Score
-
-{similarity}%
-
-Common Players:
-{len(common_players)}
-
-Differentials:
-{len(only_a) + len(only_b)}
-"""
-            )
-
-    except Exception as e:
-
-        st.error(
-            f"Error loading rival analysis: {e}"
-        )
-
-
 elif menu == "Best XI":
 
     st.title("🔥 Best XI")
@@ -4165,4 +3952,422 @@ elif menu == "Transfer Trends":
 
         st.error(
             f"Error loading trends: {e}"
+        )
+elif menu == "Rival Analyzer":
+
+    st.title("⚔️ Rival Analyzer")
+
+    LEAGUE_ID = 147447
+
+    try:
+
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        standings = pd.DataFrame(
+            league["standings"]["results"]
+        )
+
+        teams = sorted(
+            standings["entry_name"].tolist()
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            team_a = st.selectbox(
+                "Team A",
+                teams,
+                index=0
+            )
+
+        with col2:
+
+            team_b = st.selectbox(
+                "Team B",
+                teams,
+                index=min(
+                    1,
+                    len(teams) - 1
+                )
+            )
+
+        if team_a != team_b:
+
+            bootstrap = requests.get(
+                "https://fantasy.premierleague.com/api/bootstrap-static/",
+                timeout=20
+            ).json()
+
+            current_gw = next(
+                e["id"]
+                for e in bootstrap["events"]
+                if e["is_current"]
+            )
+
+            players = pd.DataFrame(
+                bootstrap["elements"]
+            )
+
+            player_lookup = dict(
+                zip(
+                    players["id"],
+                    players["web_name"]
+                )
+            )
+
+            entry_a = standings.loc[
+                standings["entry_name"] == team_a,
+                "entry"
+            ].iloc[0]
+
+            entry_b = standings.loc[
+                standings["entry_name"] == team_b,
+                "entry"
+            ].iloc[0]
+
+            rank_a = standings.loc[
+                standings["entry_name"] == team_a,
+                "rank"
+            ].iloc[0]
+
+            rank_b = standings.loc[
+                standings["entry_name"] == team_b,
+                "rank"
+            ].iloc[0]
+
+            points_a = standings.loc[
+                standings["entry_name"] == team_a,
+                "total"
+            ].iloc[0]
+
+            points_b = standings.loc[
+                standings["entry_name"] == team_b,
+                "total"
+            ].iloc[0]
+
+            picks_a = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_a}/event/{current_gw}/picks/",
+                timeout=20
+            ).json()
+
+            picks_b = requests.get(
+                f"https://fantasy.premierleague.com/api/entry/{entry_b}/event/{current_gw}/picks/",
+                timeout=20
+            ).json()
+
+            captain_a = "-"
+            vice_a = "-"
+
+            for p in picks_a["picks"]:
+
+                if p["is_captain"]:
+
+                    captain_a = player_lookup.get(
+                        p["element"],
+                        "Unknown"
+                    )
+
+                if p["is_vice_captain"]:
+
+                    vice_a = player_lookup.get(
+                        p["element"],
+                        "Unknown"
+                    )
+
+            captain_b = "-"
+            vice_b = "-"
+
+            for p in picks_b["picks"]:
+
+                if p["is_captain"]:
+
+                    captain_b = player_lookup.get(
+                        p["element"],
+                        "Unknown"
+                    )
+
+                if p["is_vice_captain"]:
+
+                    vice_b = player_lookup.get(
+                        p["element"],
+                        "Unknown"
+                    )
+
+            squad_a = {
+                player_lookup[p["element"]]
+                for p in picks_a["picks"]
+            }
+
+            squad_b = {
+                player_lookup[p["element"]]
+                for p in picks_b["picks"]
+            }
+
+            common_players = sorted(
+                squad_a & squad_b
+            )
+
+            only_a = sorted(
+                squad_a - squad_b
+            )
+
+            only_b = sorted(
+                squad_b - squad_a
+            )
+
+            st.subheader(
+                "📊 Rival Overview"
+            )
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+
+                st.metric(
+                    team_a,
+                    f"{points_a} pts",
+                    delta=f"Rank {rank_a}"
+                )
+
+            with col2:
+
+                st.metric(
+                    "Points Gap",
+                    abs(
+                        points_a - points_b
+                    )
+                )
+
+            with col3:
+
+                st.metric(
+                    team_b,
+                    f"{points_b} pts",
+                    delta=f"Rank {rank_b}"
+                )
+            st.divider()
+
+            st.subheader(
+                "🧢 Captain Comparison"
+            )
+
+            cap_df = pd.DataFrame(
+                [
+                    {
+                        "Team": team_a,
+                        "Captain": captain_a,
+                        "Vice Captain": vice_a
+                    },
+                    {
+                        "Team": team_b,
+                        "Captain": captain_b,
+                        "Vice Captain": vice_b
+                    }
+                ]
+            )
+
+            st.dataframe(
+                cap_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+            if captain_a != captain_b:
+
+                st.warning(
+                    f"""
+Captain Differential
+
+{team_a}: {captain_a}
+
+{team_b}: {captain_b}
+"""
+                )
+
+            st.divider()
+
+            st.subheader(
+                "🤝 Common Players"
+            )
+
+            common_df = pd.DataFrame(
+                {
+                    "Player": common_players
+                }
+            )
+
+            st.metric(
+                "Common Players",
+                len(common_players)
+            )
+
+            st.dataframe(
+                common_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+            st.divider()
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.subheader(
+                    f"🔵 Only {team_a}"
+                )
+
+                only_a_df = pd.DataFrame(
+                    {
+                        "Player": only_a
+                    }
+                )
+
+                st.metric(
+                    "Unique Picks",
+                    len(only_a)
+                )
+
+                st.dataframe(
+                    only_a_df,
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+            with col2:
+
+                st.subheader(
+                    f"🟠 Only {team_b}"
+                )
+
+                only_b_df = pd.DataFrame(
+                    {
+                        "Player": only_b
+                    }
+                )
+
+                st.metric(
+                    "Unique Picks",
+                    len(only_b)
+                )
+
+                st.dataframe(
+                    only_b_df,
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+            similarity = round(
+                len(common_players)
+                /
+                max(
+                    len(
+                        squad_a | squad_b
+                    ),
+                    1
+                )
+                * 100,
+                1
+            )
+
+            st.divider()
+
+            st.success(
+                f"""
+Similarity Score
+
+{similarity}%
+
+Common Players:
+{len(common_players)}
+
+Differentials:
+{len(only_a) + len(only_b)}
+"""
+            )
+
+            st.divider()
+
+            wa_text = (
+                "⚔️ RIVAL ANALYZER\n\n"
+            )
+
+            wa_text += (
+                f"{team_a}\n"
+                f"Rank #{rank_a}\n"
+                f"{points_a} pts\n\n"
+            )
+
+            wa_text += (
+                f"{team_b}\n"
+                f"Rank #{rank_b}\n"
+                f"{points_b} pts\n\n"
+            )
+
+            wa_text += (
+                f"📊 Gap: "
+                f"{abs(points_a - points_b)} pts\n\n"
+            )
+
+            wa_text += (
+                f"🧢 Captain\n"
+                f"{team_a}: {captain_a}\n"
+                f"{team_b}: {captain_b}\n\n"
+            )
+
+            wa_text += (
+                f"🎖 Vice Captain\n"
+                f"{team_a}: {vice_a}\n"
+                f"{team_b}: {vice_b}\n\n"
+            )
+
+            wa_text += (
+                f"🤝 Common Players: "
+                f"{len(common_players)}\n"
+            )
+
+            wa_text += (
+                f"📈 Similarity: "
+                f"{similarity}%\n\n"
+            )
+
+            wa_text += (
+                f"🔵 Only {team_a}: "
+                f"{len(only_a)}\n"
+            )
+
+            for player in only_a[:5]:
+                wa_text += (
+                    f"• {player}\n"
+                )
+
+            wa_text += "\n"
+
+            wa_text += (
+                f"🟠 Only {team_b}: "
+                f"{len(only_b)}\n"
+            )
+
+            for player in only_b[:5]:
+                wa_text += (
+                    f"• {player}\n"
+                )
+
+            st.subheader(
+                "📱 Copy To WhatsApp"
+            )
+
+            st.code(
+                wa_text,
+                language="text"
+            )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading rival analysis: {e}"
         )
