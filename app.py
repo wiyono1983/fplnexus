@@ -211,6 +211,7 @@ if menu == "Saham":
             "IDX Nexus",
             "Value Screener",
             "Price Momentum",
+            "Dividend Tracker",
             "Dividend Momentum",
             "Right Issue Calc",
             "MyPorto"
@@ -4899,6 +4900,181 @@ elif menu == "Dividend Momentum":
             wa_text,
             language="text"
         )
+
+elif menu == "Dividend Tracker":
+
+    st.title("💰 Dividend Tracker")
+
+    portfolio_file = "portfolio.csv"
+
+    if not os.path.exists(
+        portfolio_file
+    ):
+
+        st.warning(
+            "Portfolio belum ada."
+        )
+
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        portfolio_file
+    )
+
+    rows = []
+
+    total_dividend = 0
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = row["Ticker"]
+
+            stock = yf.Ticker(
+                ticker + ".JK"
+            )
+
+            hist = stock.history(
+                period="1y"
+            )
+
+            if hist.empty:
+                continue
+
+            price = float(
+                hist["Close"]
+                .iloc[-1]
+            )
+
+            dividends = stock.dividends
+
+            dividend = 0
+
+            if not dividends.empty:
+
+                dividend = float(
+                    dividends.tail(1)
+                    .iloc[0]
+                )
+
+            shares = (
+                int(row["Lot"])
+                * 100
+            )
+
+            avg_buy = float(
+                row["Avg Buy"]
+            )
+
+            cash_dividend = (
+                dividend
+                * shares
+            )
+
+            total_dividend += (
+                cash_dividend
+            )
+
+            yield_pct = round(
+                (
+                    dividend
+                    / price
+                )
+                * 100,
+                2
+            ) if price else 0
+
+            yoc = round(
+                (
+                    dividend
+                    / avg_buy
+                )
+                * 100,
+                2
+            ) if avg_buy else 0
+
+            rows.append(
+                {
+                    "Ticker":
+                    ticker,
+
+                    "Price":
+                    round(price),
+
+                    "Dividend":
+                    round(
+                        dividend,
+                        2
+                    ),
+
+                    "Yield %":
+                    yield_pct,
+
+                    "YOC %":
+                    yoc,
+
+                    "Shares":
+                    shares,
+
+                    "Cash Dividend":
+                    round(
+                        cash_dividend
+                    )
+                }
+            )
+
+        except:
+            pass
+
+    dividend_df = pd.DataFrame(
+        rows
+    )
+
+    dividend_df = (
+        dividend_df
+        .sort_values(
+            "Cash Dividend",
+            ascending=False
+        )
+    )
+
+    st.metric(
+        "💵 Total Estimated Dividend",
+        f"Rp {total_dividend:,.0f}"
+    )
+
+    st.dataframe(
+        dividend_df,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    wa_text = (
+        "💰 DIVIDEND TRACKER\n\n"
+        f"Total Portfolio Dividend\n"
+        f"Rp {total_dividend:,.0f}\n\n"
+    )
+
+    for _, row in (
+        dividend_df.head(5)
+        .iterrows()
+    ):
+
+        wa_text += (
+            f"• {row['Ticker']}\n"
+            f"Yield {row['Yield %']}%\n"
+            f"Cash Rp {row['Cash Dividend']:,.0f}\n\n"
+        )
+
+    st.subheader(
+        "📱 Copy To WhatsApp"
+    )
+
+    st.code(
+        wa_text,
+        language="text"
+    )
 elif menu == "Price Momentum":
 
     st.title("🚀 Price Momentum")
@@ -4933,32 +5109,27 @@ elif menu == "Price Momentum":
                 period="1y"
             )
 
-            if len(hist) < 60:
+            if len(hist) < 130:
                 continue
 
             close = hist["Close"]
 
-            current = float(
+            current_price = float(
                 close.iloc[-1]
             )
 
-            ret_1w = round(
-                (
-                    (
-                        current
-                        - close.iloc[-6]
-                    )
-                    /
-                    close.iloc[-6]
-                )
-                * 100,
-                2
+            low_52w = float(
+                close.min()
+            )
+
+            high_52w = float(
+                close.max()
             )
 
             ret_1m = round(
                 (
                     (
-                        current
+                        current_price
                         - close.iloc[-21]
                     )
                     /
@@ -4971,7 +5142,7 @@ elif menu == "Price Momentum":
             ret_3m = round(
                 (
                     (
-                        current
+                        current_price
                         - close.iloc[-63]
                     )
                     /
@@ -4981,63 +5152,78 @@ elif menu == "Price Momentum":
                 2
             )
 
-            high_52w = float(
-                close.max()
-            )
-
-            gap_high = round(
+            ret_6m = round(
                 (
                     (
-                        current
-                        /
-                        high_52w
+                        current_price
+                        - close.iloc[-126]
                     )
-                    - 1
+                    /
+                    close.iloc[-126]
                 )
                 * 100,
                 2
             )
 
-            ma20 = float(
-                close.tail(20)
+            ma20 = (
+                close
+                .tail(20)
                 .mean()
             )
 
-            ma50 = float(
-                close.tail(50)
+            ma50 = (
+                close
+                .tail(50)
                 .mean()
             )
 
-            volume_now = float(
+            vol_ratio = (
                 hist["Volume"]
                 .iloc[-1]
-            )
-
-            volume_avg = float(
+                /
                 hist["Volume"]
                 .tail(20)
                 .mean()
             )
 
-            vol_ratio = round(
-                volume_now
-                / volume_avg,
-                1
-            ) if volume_avg > 0 else 0
+            recommendation_score = 0
+
+            if ret_1m > 5:
+
+                recommendation_score += 1
+
+            if ret_3m > 15:
+
+                recommendation_score += 2
+
+            if ret_6m > 30:
+
+                recommendation_score += 2
+
+            if current_price > ma20:
+
+                recommendation_score += 1
+
+            if current_price > ma50:
+
+                recommendation_score += 1
 
             if (
-                current > ma20
-                and current > ma50
-                and vol_ratio >= 1.5
-                and gap_high >= -5
+                current_price
+                >= high_52w * 0.95
             ):
 
-                rating = "🔥 Strong"
+                recommendation_score += 2
 
-            elif (
-                current > ma20
-                and current > ma50
-            ):
+            if vol_ratio > 1.5:
+
+                recommendation_score += 1
+
+            if recommendation_score >= 8:
+
+                rating = "🔥 Strong Buy"
+
+            elif recommendation_score >= 5:
 
                 rating = "✅ Building"
 
@@ -5052,12 +5238,8 @@ elif menu == "Price Momentum":
 
                     "Price":
                     round(
-                        current,
-                        0
+                        current_price
                     ),
-
-                    "1W %":
-                    ret_1w,
 
                     "1M %":
                     ret_1m,
@@ -5065,14 +5247,24 @@ elif menu == "Price Momentum":
                     "3M %":
                     ret_3m,
 
-                    "Gap 52W High %":
-                    gap_high,
+                    "6M %":
+                    ret_6m,
 
-                    "Vol Ratio":
-                    vol_ratio,
+                    "52W Low":
+                    round(
+                        low_52w
+                    ),
+
+                    "52W High":
+                    round(
+                        high_52w
+                    ),
 
                     "Rating":
-                    rating
+                    rating,
+
+                    "Score":
+                    recommendation_score
                 }
             )
 
@@ -5091,51 +5283,80 @@ elif menu == "Price Momentum":
 
     else:
 
-        momentum_df = momentum_df.sort_values(
-            [
-                "3M %",
-                "1M %"
-            ],
-            ascending=False
+        momentum_df = (
+            momentum_df
+            .sort_values(
+                "Score",
+                ascending=False
+            )
         )
 
+        display_df = momentum_df[
+            [
+                "Ticker",
+                "Price",
+                "1M %",
+                "3M %",
+                "6M %",
+                "52W Low",
+                "52W High",
+                "Rating"
+            ]
+        ]
+
         st.dataframe(
-            momentum_df,
+            display_df,
             hide_index=True,
             use_container_width=True
         )
 
+        st.divider()
+
         st.subheader(
-            "🔥 Strong Momentum"
+            "🏆 Top 5 Recommendation"
         )
 
-        strong_df = momentum_df[
-            momentum_df["Rating"]
-            == "🔥 Strong"
-        ]
+        top5 = momentum_df.head(5)
 
-        if not strong_df.empty:
+        for i, (_, row) in enumerate(
+            top5.iterrows(),
+            start=1
+        ):
 
-            st.dataframe(
-                strong_df,
-                hide_index=True,
-                use_container_width=True
+            st.success(
+                f"""
+#{i} {row['Ticker']}
+
+Price : {row['Price']:,.0f}
+
+52W Range :
+{row['52W Low']:,.0f}
+-
+{row['52W High']:,.0f}
+
+1M : {row['1M %']}%
+3M : {row['3M %']}%
+6M : {row['6M %']}%
+
+{row['Rating']}
+"""
             )
 
         wa_text = (
             "🚀 PRICE MOMENTUM\n\n"
         )
 
-        for _, row in (
-            momentum_df.head(5)
-            .iterrows()
+        for i, (_, row) in enumerate(
+            top5.iterrows(),
+            start=1
         ):
 
             wa_text += (
-                f"• {row['Ticker']}\n"
+                f"{i}. {row['Ticker']}\n"
+                f"Price {row['Price']:,.0f}\n"
                 f"1M {row['1M %']}%\n"
                 f"3M {row['3M %']}%\n"
-                f"Gap52H {row['Gap 52W High %']}%\n"
+                f"6M {row['6M %']}%\n"
                 f"{row['Rating']}\n\n"
             )
 
