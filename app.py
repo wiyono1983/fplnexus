@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 
 
- 
+  
 st.set_page_config(
     page_title="FPL Fixtures",
     page_icon="⚽",
