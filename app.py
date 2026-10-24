@@ -212,8 +212,8 @@ if menu == "Saham":
             "Value Screener",
             "Price Momentum",
             "Dividend Tracker",
-            "Divident Momemtum"
-            'Right Issus Calc"
+            "Dividend Momemtum"
+            'Right Issue Calc"
             "MyPorto"
         ]
     )
