@@ -3907,7 +3907,10 @@ elif menu == "Statistics":
 
             raw = tables[0]
 
-            stats_df = raw.iloc[:, [0, 1, -1]].copy()
+            stats_df = raw.iloc[
+                :,
+                [0, 1, -1]
+            ].copy()
 
             stats_df.columns = [
                 "Rank",
@@ -3991,35 +3994,21 @@ elif menu == "Statistics":
             use_container_width=True
         )
 
-        if selected_stat == "DefCon":
-
-            st.bar_chart(
-                stats_df.set_index(
-                    "Player"
-                )["DefCon"]
-            )
-
-        else:
-
-            st.bar_chart(
-                stats_df.set_index(
-                    "Player"
-                )[selected_stat]
-            )
-
         wa_text = (
-            f"📈 FPL {selected_stat.upper()} TOP 10\n\n"
+            f"📈 {selected_stat.upper()} TOP 5\n\n"
         )
 
-        for _, row in stats_df.iterrows():
+        for _, row in (
+            stats_df.head(5)
+            .iterrows()
+        ):
 
             value = row[
                 selected_stat
             ]
 
             wa_text += (
-                f"{row['Rank']}. "
-                f"{row['Player']} "
+                f"• {row['Player']} "
                 f"({value})\n"
             )
 
