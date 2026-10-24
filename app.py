@@ -4555,12 +4555,17 @@ elif menu == "Right Issue Calc":
         == ticker
     ].iloc[0]
 
-    shares = (
-        int(
-            row["Lot"]
-        )
-        * 100
+    lots = int(
+        row["Lot"]
     )
+
+    avg_buy = float(
+        row["Avg Buy"]
+    )
+
+    shares = lots * 100
+
+    current_price = 0
 
     try:
 
@@ -4571,13 +4576,15 @@ elif menu == "Right Issue Calc":
         )
 
         current_price = float(
-            hist["Close"]
-            .iloc[-1]
+            hist["Close"].iloc[-1]
         )
 
     except:
+        pass
 
-        current_price = 0
+    st.subheader(
+        "📋 Rights Issue Parameters"
+    )
 
     col1, col2 = st.columns(2)
 
@@ -4594,14 +4601,37 @@ elif menu == "Right Issue Calc":
 
     with col2:
 
-        ratio = st.number_input(
-            "Ratio (1:X)",
+        cum_date = st.text_input(
+            "Cum Date",
+            ""
+        )
+
+    st.markdown(
+        "### Ratio"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        ratio_old = st.number_input(
+            "Existing Shares",
             min_value=1,
             value=5
         )
 
+    with col2:
+
+        ratio_new = st.number_input(
+            "New Shares",
+            min_value=1,
+            value=1
+        )
+
     rights_shares = int(
-        shares / ratio
+        shares
+        * ratio_new
+        / ratio_old
     )
 
     funds_needed = (
@@ -4615,73 +4645,99 @@ elif menu == "Right Issue Calc":
                 current_price
                 - rights_price
             )
-            /
-            current_price
+            / current_price
         )
         * 100,
         2
     ) if current_price else 0
 
-    terp = (
+    terp = round(
         (
-            ratio * current_price
+            (
+                ratio_old
+                * current_price
+            )
+            +
+            (
+                ratio_new
+                * rights_price
+            )
         )
-        +
-        rights_price
-    ) / (
-        ratio + 1
+        /
+        (
+            ratio_old
+            + ratio_new
+        ),
+        2
     ) if current_price else 0
+
+    profit_to_terp = round(
+        (
+            (
+                current_price
+                - terp
+            )
+            / terp
+        )
+        * 100,
+        2
+    ) if terp else 0
+
+    st.subheader(
+        "📊 RI Analysis"
+    )
 
     result_df = pd.DataFrame(
         [
             {
-                "Metric":
-                "Current Price",
-
+                "Metric": "Current Price",
                 "Value":
                 f"{current_price:,.0f}"
             },
             {
-                "Metric":
-                "RI Price",
-
+                "Metric": "RI Price",
                 "Value":
                 f"{rights_price:,.0f}"
             },
             {
-                "Metric":
-                "Discount",
-
+                "Metric": "Discount",
                 "Value":
                 f"{discount:.2f}%"
             },
             {
-                "Metric":
-                "Owned Shares",
-
+                "Metric": "Ratio",
+                "Value":
+                f"{ratio_old}:{ratio_new}"
+            },
+            {
+                "Metric": "Owned Shares",
                 "Value":
                 f"{shares:,}"
             },
             {
-                "Metric":
-                "Rights Shares",
-
+                "Metric": "Rights Shares",
                 "Value":
                 f"{rights_shares:,}"
             },
             {
-                "Metric":
-                "Funds Needed",
-
+                "Metric": "Funds Needed",
                 "Value":
                 f"Rp {funds_needed:,.0f}"
             },
             {
-                "Metric":
-                "TERP",
-
+                "Metric": "TERP",
                 "Value":
                 f"{terp:,.0f}"
+            },
+            {
+                "Metric": "Premium vs TERP",
+                "Value":
+                f"{profit_to_terp:.2f}%"
+            },
+            {
+                "Metric": "Avg Buy",
+                "Value":
+                f"{avg_buy:,.0f}"
             }
         ]
     )
@@ -4692,18 +4748,63 @@ elif menu == "Right Issue Calc":
         use_container_width=True
     )
 
+    score = 0
+
+    if discount >= 20:
+
+        score += 3
+
+    elif discount >= 10:
+
+        score += 2
+
+    elif discount >= 5:
+
+        score += 1
+
+    if current_price > terp:
+
+        score += 2
+
+    if score >= 5:
+
+        rating = "🔥 Attractive"
+
+    elif score >= 3:
+
+        rating = "⚠️ Neutral"
+
+    else:
+
+        rating = "🚫 Less Attractive"
+
+    st.metric(
+        "RI Rating",
+        rating
+    )
+
+    st.divider()
+
     wa_text = (
-        f"🎁 RI CALCULATOR\n\n"
+        "🎁 RIGHTS ISSUE ANALYZER\n\n"
         f"{ticker}\n\n"
-        f"Current : {current_price:,.0f}\n"
+        f"Current Price : {current_price:,.0f}\n"
         f"RI Price : {rights_price:,.0f}\n"
         f"Discount : {discount:.2f}%\n\n"
-        f"Ratio : 1:{ratio}\n"
-        f"Shares : {shares:,}\n"
+        f"Ratio : {ratio_old}:{ratio_new}\n"
+        f"Shares Owned : {shares:,}\n"
         f"HMETD : {rights_shares:,}\n\n"
         f"Need Funds : Rp {funds_needed:,.0f}\n"
-        f"TERP : {terp:,.0f}"
+        f"TERP : {terp:,.0f}\n"
+        f"Premium vs TERP : {profit_to_terp:.2f}%\n\n"
+        f"Rating : {rating}"
     )
+
+    if cum_date:
+
+        wa_text += (
+            f"\nCum Date : {cum_date}"
+        )
 
     st.subheader(
         "📱 Copy To WhatsApp"
