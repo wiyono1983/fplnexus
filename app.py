@@ -4373,10 +4373,176 @@ Differentials:
         st.error(
             f"Error loading rival analysis: {e}"
         )
-elif idx_menu == "Rights Issue Calculator":
+elif menu == "Momentum Screener":
+
+    st.title("🚀 Momentum Screener")
+
+    portfolio_file = "portfolio.csv"
+
+    if not os.path.exists(
+        portfolio_file
+    ):
+
+        st.warning(
+            "Portfolio belum ada."
+        )
+
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        portfolio_file
+    )
+
+    rows = []
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = (
+                row["Ticker"]
+                + ".JK"
+            )
+
+            hist = yf.Ticker(
+                ticker
+            ).history(
+                period="1y"
+            )
+
+            if len(hist) < 60:
+                continue
+
+            close = hist["Close"]
+
+            current = close.iloc[-1]
+
+            ma20 = close.tail(20).mean()
+
+            ma50 = close.tail(50).mean()
+
+            high_52w = close.max()
+
+            volume_now = (
+                hist["Volume"]
+                .iloc[-1]
+            )
+
+            volume_avg = (
+                hist["Volume"]
+                .tail(20)
+                .mean()
+            )
+
+            score = 0
+
+            signal = []
+
+            if current > ma20:
+
+                score += 2
+
+                signal.append(
+                    "MA20"
+                )
+
+            if current > ma50:
+
+                score += 2
+
+                signal.append(
+                    "MA50"
+                )
+
+            if volume_now > (
+                volume_avg * 2
+            ):
+
+                score += 2
+
+                signal.append(
+                    "VOL"
+                )
+
+            pct_high = round(
+                (
+                    current
+                    /
+                    high_52w
+                )
+                * 100,
+                1
+            )
+
+            if pct_high >= 95:
+
+                score += 2
+
+                signal.append(
+                    "HIGH"
+                )
+
+            rows.append(
+                {
+                    "Ticker":
+                    row["Ticker"],
+
+                    "Price":
+                    round(
+                        current,
+                        0
+                    ),
+
+                    "Score":
+                    score,
+
+                    "% High":
+                    pct_high,
+
+                    "Signal":
+                    ", ".join(
+                        signal
+                    )
+                }
+            )
+
+        except:
+            pass
+
+    momentum_df = pd.DataFrame(
+        rows
+    )
+
+    momentum_df = momentum_df.sort_values(
+        "Score",
+        ascending=False
+    )
+
+    st.dataframe(
+        momentum_df,
+        hide_index=True,
+        use_container_width=True
+    )
+elif menu == "Right Issue Calc":
 
     st.title(
-        "🎁 Rights Issue Calculator"
+        "🎁 Right Issue Calculator"
+    )
+
+    portfolio_file = "portfolio.csv"
+
+    if not os.path.exists(
+        portfolio_file
+    ):
+
+        st.warning(
+            "Portfolio belum ada."
+        )
+
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        portfolio_file
     )
 
     ticker = st.selectbox(
@@ -4389,17 +4555,12 @@ elif idx_menu == "Rights Issue Calculator":
         == ticker
     ].iloc[0]
 
-    lots = int(
-        row["Lot"]
+    shares = (
+        int(
+            row["Lot"]
+        )
+        * 100
     )
-
-    avg_buy = float(
-        row["Avg Buy"]
-    )
-
-    shares = lots * 100
-
-    current_price = 0
 
     try:
 
@@ -4415,7 +4576,8 @@ elif idx_menu == "Rights Issue Calculator":
         )
 
     except:
-        pass
+
+        current_price = 0
 
     col1, col2 = st.columns(2)
 
@@ -4425,30 +4587,29 @@ elif idx_menu == "Rights Issue Calculator":
             "RI Price",
             min_value=1.0,
             value=max(
-                1.0,
-                current_price * 0.8
+                current_price * 0.8,
+                1.0
             )
         )
 
     with col2:
 
-        ratio_denominator = st.number_input(
-            "Ratio (1 : X)",
+        ratio = st.number_input(
+            "Ratio (1:X)",
             min_value=1,
             value=5
         )
 
     rights_shares = int(
-        shares
-        / ratio_denominator
+        shares / ratio
     )
 
-    required_funds = (
+    funds_needed = (
         rights_shares
         * rights_price
     )
 
-    discount_pct = round(
+    discount = round(
         (
             (
                 current_price
@@ -4459,19 +4620,17 @@ elif idx_menu == "Rights Issue Calculator":
         )
         * 100,
         2
-    ) if current_price > 0 else 0
+    ) if current_price else 0
 
     terp = (
         (
-            ratio_denominator
-            * current_price
+            ratio * current_price
         )
         +
         rights_price
     ) / (
-        ratio_denominator
-        + 1
-    ) if current_price > 0 else 0
+        ratio + 1
+    ) if current_price else 0
 
     result_df = pd.DataFrame(
         [
@@ -4494,7 +4653,7 @@ elif idx_menu == "Rights Issue Calculator":
                 "Discount",
 
                 "Value":
-                f"{discount_pct:.2f}%"
+                f"{discount:.2f}%"
             },
             {
                 "Metric":
@@ -4512,10 +4671,10 @@ elif idx_menu == "Rights Issue Calculator":
             },
             {
                 "Metric":
-                "Required Funds",
+                "Funds Needed",
 
                 "Value":
-                f"Rp {required_funds:,.0f}"
+                f"Rp {funds_needed:,.0f}"
             },
             {
                 "Metric":
@@ -4533,53 +4692,17 @@ elif idx_menu == "Rights Issue Calculator":
         use_container_width=True
     )
 
-    score = 0
-
-    if discount_pct >= 20:
-
-        score += 3
-
-    elif discount_pct >= 10:
-
-        score += 2
-
-    elif discount_pct >= 5:
-
-        score += 1
-
-    if current_price > terp:
-
-        score += 2
-
-    if score >= 5:
-
-        rating = "🔥 Attractive"
-
-    elif score >= 3:
-
-        rating = "⚠️ Neutral"
-
-    else:
-
-        rating = "🚫 Less Attractive"
-
-    st.metric(
-        "RI Rating",
-        rating
-    )
-
     wa_text = (
-        "🎁 RIGHTS ISSUE ANALYZER\n\n"
+        f"🎁 RI CALCULATOR\n\n"
         f"{ticker}\n\n"
-        f"Current Price : {current_price:,.0f}\n"
+        f"Current : {current_price:,.0f}\n"
         f"RI Price : {rights_price:,.0f}\n"
-        f"Discount : {discount_pct:.2f}%\n\n"
-        f"Ratio : 1:{ratio_denominator}\n"
-        f"Shares Owned : {shares:,}\n"
-        f"Rights Shares : {rights_shares:,}\n"
-        f"Funds Needed : Rp {required_funds:,.0f}\n\n"
-        f"TERP : {terp:,.0f}\n"
-        f"Rating : {rating}"
+        f"Discount : {discount:.2f}%\n\n"
+        f"Ratio : 1:{ratio}\n"
+        f"Shares : {shares:,}\n"
+        f"HMETD : {rights_shares:,}\n\n"
+        f"Need Funds : Rp {funds_needed:,.0f}\n"
+        f"TERP : {terp:,.0f}"
     )
 
     st.subheader(
