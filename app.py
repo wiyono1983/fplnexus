@@ -213,7 +213,7 @@ if menu == "Saham":
             "Price Momentum",
             "Dividend Tracker",
             "Dividend Momemtum",
-            'Right Issue Calc",
+            "Right Issue Calc",
             "MyPorto"
         ]
     )
