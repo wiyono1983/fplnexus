@@ -210,6 +210,10 @@ if menu == "Saham":
         [
             "IDX Nexus",
             "Value Screener",
+            "Price Momentum",
+            "Dividend Tracker",
+            "Divident Momemtum"
+            'Right Issus Calc"
             "MyPorto"
         ]
     )
@@ -4042,3 +4046,1089 @@ elif menu == "Statistics":
         st.error(
             f"Error loading statistics: {e}"
         )
+elif menu == "Price Momentum":
+
+    st.title("🚀 Price Momentum")
+
+    portfolio_file = "portfolio.csv"
+
+    if not os.path.exists(
+        portfolio_file
+    ):
+
+        st.warning(
+            "Portfolio belum ada."
+        )
+
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        portfolio_file
+    )
+
+    rows = []
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = row["Ticker"]
+
+            avg_buy = float(
+                row["Avg Buy"]
+            )
+
+            hist = yf.Ticker(
+                ticker + ".JK"
+            ).history(
+                period="1y"
+            )
+
+            if len(hist) < 130:
+
+                continue
+
+            close = hist["Close"]
+
+            current_price = float(
+                close.iloc[-1]
+            )
+
+            low_52w = float(
+                close.min()
+            )
+
+            high_52w = float(
+                close.max()
+            )
+
+            ret_1m = round(
+                (
+                    (
+                        current_price
+                        - close.iloc[-21]
+                    )
+                    /
+                    close.iloc[-21]
+                )
+                * 100,
+                2
+            )
+
+            ret_3m = round(
+                (
+                    (
+                        current_price
+                        - close.iloc[-63]
+                    )
+                    /
+                    close.iloc[-63]
+                )
+                * 100,
+                2
+            )
+
+            ret_6m = round(
+                (
+                    (
+                        current_price
+                        - close.iloc[-126]
+                    )
+                    /
+                    close.iloc[-126]
+                )
+                * 100,
+                2
+            )
+
+            ma20 = (
+                close
+                .tail(20)
+                .mean()
+            )
+
+            ma50 = (
+                close
+                .tail(50)
+                .mean()
+            )
+
+            vol_ratio = (
+                hist["Volume"]
+                .iloc[-1]
+                /
+                hist["Volume"]
+                .tail(20)
+                .mean()
+            )
+
+            discount_avg = round(
+                (
+                    (
+                        current_price
+                        - avg_buy
+                    )
+                    /
+                    avg_buy
+                )
+                * 100,
+                2
+            )
+
+            score = 0
+
+            if ret_1m > 5:
+                score += 1
+
+            if ret_3m > 15:
+                score += 2
+
+            if ret_6m > 30:
+                score += 2
+
+            if current_price > ma20:
+                score += 1
+
+            if current_price > ma50:
+                score += 1
+
+            if (
+                current_price
+                >= high_52w * 0.95
+            ):
+                score += 2
+
+            if vol_ratio > 1.5:
+                score += 1
+
+            if score >= 8:
+
+                rating = "🚀 Strong Momentum"
+
+            elif score >= 5:
+
+                rating = "📈 Uptrend"
+
+            else:
+
+                rating = "⏸ Sideways"
+
+            rows.append(
+                {
+                    "Ticker":
+                    ticker,
+
+                    "Avg Buy":
+                    round(avg_buy),
+
+                    "Price":
+                    round(current_price),
+
+                    "Disc Avg %":
+                    discount_avg,
+
+                    "1M %":
+                    ret_1m,
+
+                    "3M %":
+                    ret_3m,
+
+                    "6M %":
+                    ret_6m,
+
+                    "52W Low":
+                    round(low_52w),
+
+                    "52W High":
+                    round(high_52w),
+
+                    "Rating":
+                    rating,
+
+                    "Score":
+                    score
+                }
+            )
+
+        except:
+            pass
+
+    momentum_df = pd.DataFrame(
+        rows
+    )
+
+    if momentum_df.empty:
+
+        st.warning(
+            "No data found."
+        )
+
+    else:
+
+        momentum_df = (
+            momentum_df
+            .sort_values(
+                "Score",
+                ascending=False
+            )
+        )
+
+        st.subheader(
+            "📈 Portfolio Momentum"
+        )
+
+        st.dataframe(
+            momentum_df[
+                [
+                    "Ticker",
+                    "Avg Buy",
+                    "Price",
+                    "Disc Avg %",
+                    "1M %",
+                    "3M %",
+                    "6M %",
+                    "52W Low",
+                    "52W High",
+                    "Rating"
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        st.subheader(
+            "🏆 Top 5 Recommendation"
+        )
+
+        top5 = momentum_df.head(5)
+
+        for i, (_, row) in enumerate(
+            top5.iterrows(),
+            start=1
+        ):
+
+            st.success(
+                f"""
+#{i} {row['Ticker']}
+
+Price : {row['Price']:,.0f}
+
+Avg Buy :
+{row['Avg Buy']:,.0f}
+
+1M : {row['1M %']}%
+3M : {row['3M %']}%
+6M : {row['6M %']}%
+
+52W Range :
+{row['52W Low']:,.0f}
+-
+{row['52W High']:,.0f}
+
+{row['Rating']}
+"""
+            )
+
+        st.divider()
+
+        st.subheader(
+            "🎯 Average Down Opportunities"
+        )
+
+        avg_down_df = momentum_df[
+            (
+                momentum_df[
+                    "Disc Avg %"
+                ]
+                < 0
+            )
+            &
+            (
+                momentum_df[
+                    "Rating"
+                ]
+                != "⏸ Sideways"
+            )
+        ]
+
+        if avg_down_df.empty:
+
+            st.info(
+                "No average down opportunities."
+            )
+
+        else:
+
+            avg_down_df = (
+                avg_down_df
+                .sort_values(
+                    "Disc Avg %",
+                    ascending=True
+                )
+            )
+
+            st.dataframe(
+                avg_down_df[
+                    [
+                        "Ticker",
+                        "Avg Buy",
+                        "Price",
+                        "Disc Avg %",
+                        "Rating"
+                    ]
+                ],
+                hide_index=True,
+                use_container_width=True
+            )
+
+        st.divider()
+
+        wa_text = (
+            "🚀 PRICE MOMENTUM\n\n"
+        )
+
+        wa_text += (
+            "🏆 TOP MOMENTUM\n\n"
+        )
+
+        for i, (_, row) in enumerate(
+            top5.iterrows(),
+            start=1
+        ):
+
+            wa_text += (
+                f"{i}. {row['Ticker']}\n"
+                f"Price {row['Price']:,.0f}\n"
+                f"3M {row['3M %']}%\n"
+                f"6M {row['6M %']}%\n"
+                f"{row['Rating']}\n\n"
+            )
+
+        if not avg_down_df.empty:
+
+            wa_text += (
+                "🎯 AVG DOWN\n\n"
+            )
+
+            for _, row in (
+                avg_down_df
+                .head(5)
+                .iterrows()
+            ):
+
+                wa_text += (
+                    f"• {row['Ticker']}\n"
+                    f"Avg {row['Avg Buy']:,.0f}\n"
+                    f"Now {row['Price']:,.0f}\n"
+                    f"{row['Disc Avg %']}%\n"
+                    f"{row['Rating']}\n\n"
+                )
+
+        st.subheader(
+            "📱 Copy To WhatsApp"
+        )
+
+        st.code(
+            wa_text,
+            language="text"
+        )
+elif menu == "Dividend Tracker":
+
+    st.title("💰 Dividend Tracker")
+
+    portfolio_file = "portfolio.csv"
+
+    if not os.path.exists(
+        portfolio_file
+    ):
+
+        st.warning(
+            "Portfolio belum ada."
+        )
+
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        portfolio_file
+    )
+
+    rows = []
+
+    total_dividend = 0
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = row["Ticker"]
+
+            stock = yf.Ticker(
+                ticker + ".JK"
+            )
+
+            hist = stock.history(
+                period="1y"
+            )
+
+            if hist.empty:
+                continue
+
+            price = float(
+                hist["Close"]
+                .iloc[-1]
+            )
+
+            dividends = stock.dividends
+
+            dividend = 0
+
+            if not dividends.empty:
+
+                dividend = float(
+                    dividends.tail(1)
+                    .iloc[0]
+                )
+
+            shares = (
+                int(row["Lot"])
+                * 100
+            )
+
+            avg_buy = float(
+                row["Avg Buy"]
+            )
+
+            cash_dividend = (
+                dividend
+                * shares
+            )
+
+            total_dividend += (
+                cash_dividend
+            )
+
+            yield_pct = round(
+                (
+                    dividend
+                    / price
+                )
+                * 100,
+                2
+            ) if price else 0
+
+            yoc = round(
+                (
+                    dividend
+                    / avg_buy
+                )
+                * 100,
+                2
+            ) if avg_buy else 0
+
+            rows.append(
+                {
+                    "Ticker":
+                    ticker,
+
+                    "Price":
+                    round(price),
+
+                    "Dividend":
+                    round(
+                        dividend,
+                        2
+                    ),
+
+                    "Yield %":
+                    yield_pct,
+
+                    "YOC %":
+                    yoc,
+
+                    "Shares":
+                    shares,
+
+                    "Cash Dividend":
+                    round(
+                        cash_dividend
+                    )
+                }
+            )
+
+        except:
+            pass
+
+    dividend_df = pd.DataFrame(
+        rows
+    )
+
+    dividend_df = (
+        dividend_df
+        .sort_values(
+            "Cash Dividend",
+            ascending=False
+        )
+    )
+
+    st.metric(
+        "💵 Total Estimated Dividend",
+        f"Rp {total_dividend:,.0f}"
+    )
+
+    st.dataframe(
+        dividend_df,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    wa_text = (
+        "💰 DIVIDEND TRACKER\n\n"
+        f"Total Portfolio Dividend\n"
+        f"Rp {total_dividend:,.0f}\n\n"
+    )
+
+    for _, row in (
+        dividend_df.head(5)
+        .iterrows()
+    ):
+
+        wa_text += (
+            f"• {row['Ticker']}\n"
+            f"Yield {row['Yield %']}%\n"
+            f"Cash Rp {row['Cash Dividend']:,.0f}\n\n"
+        )
+
+    st.subheader(
+        "📱 Copy To WhatsApp"
+    )
+
+    st.code(
+        wa_text,
+        language="text"
+    )
+elif menu == "Dividend Momentum":
+
+    st.title("💰 Dividend Momentum")
+
+    portfolio_file = "portfolio.csv"
+
+    if not os.path.exists(
+        portfolio_file
+    ):
+
+        st.warning(
+            "Portfolio belum ada."
+        )
+
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        portfolio_file
+    )
+
+    rows = []
+
+    total_dividend = 0
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = row["Ticker"]
+
+            stock = yf.Ticker(
+                ticker + ".JK"
+            )
+
+            hist = stock.history(
+                period="1y"
+            )
+
+            if hist.empty:
+                continue
+
+            current_price = float(
+                hist["Close"]
+                .iloc[-1]
+            )
+
+            dividends = stock.dividends
+
+            dividend_per_share = 0
+
+            if not dividends.empty:
+
+                dividend_per_share = float(
+                    dividends.tail(1)
+                    .iloc[0]
+                )
+
+            shares = (
+                int(row["Lot"])
+                * 100
+            )
+
+            avg_buy = float(
+                row["Avg Buy"]
+            )
+
+            current_yield = round(
+                (
+                    dividend_per_share
+                    / current_price
+                )
+                * 100,
+                2
+            ) if current_price else 0
+
+            yoc = round(
+                (
+                    dividend_per_share
+                    / avg_buy
+                )
+                * 100,
+                2
+            ) if avg_buy else 0
+
+            cash_dividend = (
+                dividend_per_share
+                * shares
+            )
+
+            total_dividend += (
+                cash_dividend
+            )
+
+            score = 0
+
+            if current_yield >= 8:
+
+                score += 3
+
+            elif current_yield >= 6:
+
+                score += 2
+
+            elif current_yield >= 4:
+
+                score += 1
+
+            if yoc > current_yield:
+
+                score += 1
+
+            if current_price < avg_buy:
+
+                score += 1
+
+            if score >= 4:
+
+                rating = "🔥 Strong"
+
+            elif score >= 2:
+
+                rating = "✅ Good"
+
+            else:
+
+                rating = "⚠️ Weak"
+
+            rows.append(
+                {
+                    "Ticker":
+                    ticker,
+
+                    "Price":
+                    round(
+                        current_price,
+                        0
+                    ),
+
+                    "Dividend":
+                    round(
+                        dividend_per_share,
+                        2
+                    ),
+
+                    "Yield %":
+                    current_yield,
+
+                    "YOC %":
+                    yoc,
+
+                    "Cash Dividend":
+                    round(
+                        cash_dividend
+                    ),
+
+                    "Rating":
+                    rating
+                }
+            )
+
+        except:
+            pass
+
+    dividend_df = pd.DataFrame(
+        rows
+    )
+
+    if dividend_df.empty:
+
+        st.warning(
+            "No dividend data found."
+        )
+
+    else:
+
+        dividend_df = (
+            dividend_df
+            .sort_values(
+                "Yield %",
+                ascending=False
+            )
+        )
+
+        st.metric(
+            "💵 Expected Dividend",
+            f"Rp {total_dividend:,.0f}"
+        )
+
+        st.dataframe(
+            dividend_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.subheader(
+            "🏆 Top Dividend Opportunities"
+        )
+
+        st.dataframe(
+            dividend_df.head(5),
+            hide_index=True,
+            use_container_width=True
+        )
+
+        wa_text = (
+            "💰 DIVIDEND MOMENTUM\n\n"
+        )
+
+        wa_text += (
+            f"Expected Dividend\n"
+            f"Rp {total_dividend:,.0f}\n\n"
+        )
+
+        for _, row in (
+            dividend_df.head(5)
+            .iterrows()
+        ):
+
+            wa_text += (
+                f"• {row['Ticker']}\n"
+                f"Yield {row['Yield %']}%\n"
+                f"YOC {row['YOC %']}%\n"
+                f"Cash Rp {row['Cash Dividend']:,.0f}\n\n"
+            )
+
+        st.subheader(
+            "📱 Copy To WhatsApp"
+        )
+
+        st.code(
+            wa_text,
+            language="text"
+        )
+elif menu == "Right Issue Calc":
+
+    st.title(
+        "🎁 Right Issue Calculator"
+    )
+
+    portfolio_file = "portfolio.csv"
+
+    if not os.path.exists(
+        portfolio_file
+    ):
+
+        st.warning(
+            "Portfolio belum ada."
+        )
+
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        portfolio_file
+    )
+
+    ticker = st.selectbox(
+        "Ticker",
+        portfolio_df["Ticker"]
+    )
+
+    row = portfolio_df[
+        portfolio_df["Ticker"]
+        == ticker
+    ].iloc[0]
+
+    lots = int(
+        row["Lot"]
+    )
+
+    avg_buy = float(
+        row["Avg Buy"]
+    )
+
+    shares = lots * 100
+
+    current_price = 0
+
+    try:
+
+        hist = yf.Ticker(
+            ticker + ".JK"
+        ).history(
+            period="5d"
+        )
+
+        current_price = float(
+            hist["Close"].iloc[-1]
+        )
+
+    except:
+        pass
+
+    st.subheader(
+        "📋 Rights Issue Parameters"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        rights_price = st.number_input(
+            "RI Price",
+            min_value=1.0,
+            value=max(
+                current_price * 0.8,
+                1.0
+            )
+        )
+
+    with col2:
+
+        cum_date = st.text_input(
+            "Cum Date",
+            ""
+        )
+
+    st.markdown(
+        "### Ratio"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        ratio_old = st.number_input(
+            "Existing Shares",
+            min_value=1,
+            value=5
+        )
+
+    with col2:
+
+        ratio_new = st.number_input(
+            "New Shares",
+            min_value=1,
+            value=1
+        )
+
+    rights_shares = int(
+        shares
+        * ratio_new
+        / ratio_old
+    )
+
+    funds_needed = (
+        rights_shares
+        * rights_price
+    )
+
+    discount = round(
+        (
+            (
+                current_price
+                - rights_price
+            )
+            / current_price
+        )
+        * 100,
+        2
+    ) if current_price else 0
+
+    terp = round(
+        (
+            (
+                ratio_old
+                * current_price
+            )
+            +
+            (
+                ratio_new
+                * rights_price
+            )
+        )
+        /
+        (
+            ratio_old
+            + ratio_new
+        ),
+        2
+    ) if current_price else 0
+
+    profit_to_terp = round(
+        (
+            (
+                current_price
+                - terp
+            )
+            / terp
+        )
+        * 100,
+        2
+    ) if terp else 0
+
+    st.subheader(
+        "📊 RI Analysis"
+    )
+
+    result_df = pd.DataFrame(
+        [
+            {
+                "Metric": "Current Price",
+                "Value":
+                f"{current_price:,.0f}"
+            },
+            {
+                "Metric": "RI Price",
+                "Value":
+                f"{rights_price:,.0f}"
+            },
+            {
+                "Metric": "Discount",
+                "Value":
+                f"{discount:.2f}%"
+            },
+            {
+                "Metric": "Ratio",
+                "Value":
+                f"{ratio_old}:{ratio_new}"
+            },
+            {
+                "Metric": "Owned Shares",
+                "Value":
+                f"{shares:,}"
+            },
+            {
+                "Metric": "Rights Shares",
+                "Value":
+                f"{rights_shares:,}"
+            },
+            {
+                "Metric": "Funds Needed",
+                "Value":
+                f"Rp {funds_needed:,.0f}"
+            },
+            {
+                "Metric": "TERP",
+                "Value":
+                f"{terp:,.0f}"
+            },
+            {
+                "Metric": "Premium vs TERP",
+                "Value":
+                f"{profit_to_terp:.2f}%"
+            },
+            {
+                "Metric": "Avg Buy",
+                "Value":
+                f"{avg_buy:,.0f}"
+            }
+        ]
+    )
+
+    st.dataframe(
+        result_df,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    score = 0
+
+    if discount >= 20:
+
+        score += 3
+
+    elif discount >= 10:
+
+        score += 2
+
+    elif discount >= 5:
+
+        score += 1
+
+    if current_price > terp:
+
+        score += 2
+
+    if score >= 5:
+
+        rating = "🔥 Attractive"
+
+    elif score >= 3:
+
+        rating = "⚠️ Neutral"
+
+    else:
+
+        rating = "🚫 Less Attractive"
+
+    st.metric(
+        "RI Rating",
+        rating
+    )
+
+    st.divider()
+
+    wa_text = (
+        "🎁 RIGHTS ISSUE ANALYZER\n\n"
+        f"{ticker}\n\n"
+        f"Current Price : {current_price:,.0f}\n"
+        f"RI Price : {rights_price:,.0f}\n"
+        f"Discount : {discount:.2f}%\n\n"
+        f"Ratio : {ratio_old}:{ratio_new}\n"
+        f"Shares Owned : {shares:,}\n"
+        f"HMETD : {rights_shares:,}\n\n"
+        f"Need Funds : Rp {funds_needed:,.0f}\n"
+        f"TERP : {terp:,.0f}\n"
+        f"Premium vs TERP : {profit_to_terp:.2f}%\n\n"
+        f"Rating : {rating}"
+    )
+
+    if cum_date:
+
+        wa_text += (
+            f"\nCum Date : {cum_date}"
+        )
+
+    st.subheader(
+        "📱 Copy To WhatsApp"
+    )
+
+    st.code(
+        wa_text,
+        language="text"
+    )
