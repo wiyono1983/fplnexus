@@ -3564,7 +3564,7 @@ elif menu == "Captain Picks":
         )
 
         selected_gw = st.selectbox(
-            "Select Gameweek",
+            "📅 Select Gameweek",
             list(range(1, current_gw + 1)),
             index=current_gw - 1
         )
@@ -3595,14 +3595,15 @@ elif menu == "Captain Picks":
         captain_count = {}
         vice_count = {}
 
-        triple_captain_count = {}
         eo_bonus = {}
+
+        triple_captain_count = {}
 
         chip_usage = {
             "3xc": 0,
             "bboost": 0,
             "freehit": 0,
-            "wildcard": 0
+            "wildcard": 0,
         }
 
         for manager in entries:
@@ -3613,7 +3614,7 @@ elif menu == "Captain Picks":
 
                 picks = requests.get(
                     f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{selected_gw}/picks/",
-                    timeout=20
+                    timeout=20,
                 ).json()
 
                 if "picks" not in picks:
@@ -3633,14 +3634,15 @@ elif menu == "Captain Picks":
 
                     player_name = player_lookup.get(
                         p["element"],
-                        "Unknown"
+                        "Unknown",
                     )
 
                     ownership_count[player_name] = (
                         ownership_count.get(
                             player_name,
-                            0
-                        ) + 1
+                            0,
+                        )
+                        + 1
                     )
 
                     if p["is_captain"]:
@@ -3650,8 +3652,9 @@ elif menu == "Captain Picks":
                         captain_count[player_name] = (
                             captain_count.get(
                                 player_name,
-                                0
-                            ) + 1
+                                0,
+                            )
+                            + 1
                         )
 
                         bonus = (
@@ -3663,7 +3666,7 @@ elif menu == "Captain Picks":
                         eo_bonus[player_name] = (
                             eo_bonus.get(
                                 player_name,
-                                0
+                                0,
                             )
                             + bonus
                         )
@@ -3673,8 +3676,9 @@ elif menu == "Captain Picks":
                             triple_captain_count[player_name] = (
                                 triple_captain_count.get(
                                     player_name,
-                                    0
-                                ) + 1
+                                    0,
+                                )
+                                + 1
                             )
 
                     if p["is_vice_captain"]:
@@ -3684,8 +3688,9 @@ elif menu == "Captain Picks":
                         vice_count[player_name] = (
                             vice_count.get(
                                 player_name,
-                                0
-                            ) + 1
+                                0,
+                            )
+                            + 1
                         )
 
                 rows.append(
@@ -3694,7 +3699,7 @@ elif menu == "Captain Picks":
                         "Manager": manager["player_name"],
                         "Captain": captain,
                         "Vice Captain": vice,
-                        "Chip": active_chip or "-"
+                        "Chip": active_chip or "-",
                     }
                 )
 
@@ -3716,9 +3721,8 @@ elif menu == "Captain Picks":
         st.dataframe(
             captain_df,
             hide_index=True,
-            use_container_width=True
+            use_container_width=True,
         )
-
         ownership = (
             captain_df["Captain"]
             .value_counts()
@@ -3735,8 +3739,6 @@ elif menu == "Captain Picks":
             / total_managers
             * 100
         ).round(1)
-
-        st.divider()
 
         st.subheader(
             "🏆 Captain Ownership"
@@ -3829,7 +3831,7 @@ elif menu == "Captain Picks":
                     "Ownership %": own_pct,
                     "Captain %": cap_pct,
                     "Triple Captain %": tc_pct,
-                    "EO %": eo_pct
+                    "EO %": eo_pct,
                 }
             )
 
@@ -3853,25 +3855,55 @@ elif menu == "Captain Picks":
             use_container_width=True
         )
 
-        st.divider()
-
         chip_df = pd.DataFrame(
             [
                 {
                     "Chip": "Triple Captain",
-                    "Managers": chip_usage["3xc"]
+                    "Managers": chip_usage["3xc"],
+                    "Usage %": round(
+                        chip_usage["3xc"]
+                        / total_managers
+                        * 100,
+                        1
+                    )
+                    if total_managers
+                    else 0,
                 },
                 {
                     "Chip": "Bench Boost",
-                    "Managers": chip_usage["bboost"]
+                    "Managers": chip_usage["bboost"],
+                    "Usage %": round(
+                        chip_usage["bboost"]
+                        / total_managers
+                        * 100,
+                        1
+                    )
+                    if total_managers
+                    else 0,
                 },
                 {
                     "Chip": "Free Hit",
-                    "Managers": chip_usage["freehit"]
+                    "Managers": chip_usage["freehit"],
+                    "Usage %": round(
+                        chip_usage["freehit"]
+                        / total_managers
+                        * 100,
+                        1
+                    )
+                    if total_managers
+                    else 0,
                 },
                 {
                     "Chip": "Wildcard",
-                    "Managers": chip_usage["wildcard"]
+                    "Managers": chip_usage["wildcard"],
+                    "Usage %": round(
+                        chip_usage["wildcard"]
+                        / total_managers
+                        * 100,
+                        1
+                    )
+                    if total_managers
+                    else 0,
                 },
             ]
         )
@@ -3885,63 +3917,6 @@ elif menu == "Captain Picks":
             hide_index=True,
             use_container_width=True
         )
-
-        wa_text = (
-            f"🧢 GW{selected_gw} Captain Report\n\n"
-        )
-
-        wa_text += "🏆 C: "
-
-        wa_text += " | ".join(
-            [
-                f"{r['Captain']} {r['Ownership']}%"
-                for _, r in ownership.head(3).iterrows()
-            ]
-        )
-
-        wa_text += "\n"
-
-        wa_text += "🎖 VC: "
-
-        wa_text += " | ".join(
-            [
-                f"{r['Vice Captain']} {r['Ownership']}%"
-                for _, r in vice_df.head(3).iterrows()
-            ]
-        )
-
-        wa_text += "\n"
-
-        chips = []
-
-        if chip_usage["3xc"] > 0:
-            chips.append(
-                f"TC {chip_usage['3xc']}"
-            )
-
-        if chip_usage["bboost"] > 0:
-            chips.append(
-                f"BB {chip_usage['bboost']}"
-            )
-
-        if chip_usage["freehit"] > 0:
-            chips.append(
-                f"FH {chip_usage['freehit']}"
-            )
-
-        if chip_usage["wildcard"] > 0:
-            chips.append(
-                f"WC {chip_usage['wildcard']}"
-            )
-
-        if chips:
-
-            wa_text += (
-                "🎯 "
-                + " | ".join(chips)
-                + "\n"
-            )
-
         if triple_captain_count:
 
             tc_df = (
@@ -3951,31 +3926,120 @@ elif menu == "Captain Picks":
                 .sort_values(
                     ascending=False
                 )
+                .reset_index()
             )
 
-            picks_text = []
+            tc_df.columns = [
+                "Player",
+                "Triple Captain Count"
+            ]
 
-            for player, count in tc_df.items():
+            tc_df["Usage %"] = (
+                tc_df["Triple Captain Count"]
+                / total_managers
+                * 100
+            ).round(1)
 
-                picks_text.append(
-                    f"{player} x{count}"
-                )
+            st.subheader(
+                "🚀 Triple Captain Picks"
+            )
+
+            st.dataframe(
+                tc_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+        st.divider()
+
+        wa_text = (
+            f"🧢 GW{selected_gw} CAPTAIN REPORT\n\n"
+        )
+
+        wa_text += (
+            "🏆 TOP CAPTAINS\n"
+        )
+
+        for _, row in ownership.head(3).iterrows():
 
             wa_text += (
-                "🚀 "
-                + " | ".join(
-                    picks_text
-                )
-                + "\n"
+                f"• {row['Captain']} "
+                f"({row['Ownership']}%)\n"
             )
 
-        wa_text += "\n📈 EO\n"
+        wa_text += "\n"
+
+        wa_text += (
+            "🎖 TOP VICE CAPTAINS\n"
+        )
+
+        for _, row in vice_df.head(3).iterrows():
+
+            wa_text += (
+                f"• {row['Vice Captain']} "
+                f"({row['Ownership']}%)\n"
+            )
+
+        wa_text += "\n"
+
+        wa_text += (
+            "🎯 CHIP USAGE\n"
+        )
+
+        if chip_usage["3xc"] > 0:
+
+            wa_text += (
+                f"• Triple Captain : "
+                f"{chip_usage['3xc']}/{total_managers}\n"
+            )
+
+        if chip_usage["bboost"] > 0:
+
+            wa_text += (
+                f"• Bench Boost : "
+                f"{chip_usage['bboost']}/{total_managers}\n"
+            )
+
+        if chip_usage["freehit"] > 0:
+
+            wa_text += (
+                f"• Free Hit : "
+                f"{chip_usage['freehit']}/{total_managers}\n"
+            )
+
+        if chip_usage["wildcard"] > 0:
+
+            wa_text += (
+                f"• Wildcard : "
+                f"{chip_usage['wildcard']}/{total_managers}\n"
+            )
+
+        if triple_captain_count:
+
+            wa_text += "\n"
+
+            wa_text += (
+                "🚀 TRIPLE CAPTAIN PICKS\n"
+            )
+
+            for _, row in tc_df.iterrows():
+
+                wa_text += (
+                    f"• {row['Player']} "
+                    f"({row['Triple Captain Count']})\n"
+                )
+
+        wa_text += "\n"
+
+        wa_text += (
+            "📈 TOP 5 EO\n"
+        )
 
         for _, row in eo_df.head(5).iterrows():
 
             wa_text += (
-                f"{row['Player']} "
-                f"{row['EO %']}%\n"
+                f"• {row['Player']} "
+                f"({row['EO %']}%)\n"
             )
 
         st.subheader(
