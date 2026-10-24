@@ -1469,229 +1469,6 @@ elif menu == "Standings":
             f"Error loading standings: {e}"
         )
 
-elif menu == "Captain Picks":
-
-    st.title("🧢 Captain Picks")
-
-    LEAGUE_ID = 147447
-
-    try:
-
-        bootstrap = requests.get(
-            "https://fantasy.premierleague.com/api/bootstrap-static/",
-            timeout=20
-        ).json()
-
-        current_gw = next(
-            e["id"]
-            for e in bootstrap["events"]
-            if e["is_current"]
-        )
-
-        selected_gw = st.selectbox(
-            "Select Gameweek",
-            list(range(1, current_gw + 1)),
-            index=current_gw - 1
-        )
-
-        players = pd.DataFrame(
-            bootstrap["elements"]
-        )
-
-        player_lookup = dict(
-            zip(
-                players["id"],
-                players["web_name"]
-            )
-        )
-
-        league = requests.get(
-            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
-            timeout=20
-        ).json()
-
-        entries = league["standings"]["results"]
-
-        rows = []
-        eo_count = {}
-        captain_count = {}
-
-        for manager in entries:
-
-            try:
-
-                entry_id = manager["entry"]
-
-                picks = requests.get(
-                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{selected_gw}/picks/",
-                    timeout=20
-                ).json()
-
-                if "picks" not in picks:
-                    continue
-
-                captain = None
-                vice = None
-
-                for p in picks["picks"]:
-
-                    player_name = player_lookup.get(
-                        p["element"],
-                        "Unknown"
-                    )
-
-                    eo_count[player_name] = (
-                        eo_count.get(
-                            player_name,
-                            0
-                        ) + 1
-                    )
-
-                    if p["is_captain"]:
-
-                        captain = player_name
-
-                        captain_count[player_name] = (
-                            captain_count.get(
-                                player_name,
-                                0
-                            ) + 1
-                        )
-
-                    if p["is_vice_captain"]:
-
-                        vice = player_name
-
-                rows.append(
-                    {
-                        "Team": manager["entry_name"],
-                        "Manager": manager["player_name"],
-                        "Captain": captain,
-                        "Vice Captain": vice
-                    }
-                )
-
-            except Exception:
-                continue
-
-        captain_df = pd.DataFrame(rows)
-
-        st.write(
-            f"Managers loaded: {len(captain_df)}"
-        )
-
-        if captain_df.empty:
-
-            st.warning(
-                "No captain data found."
-            )
-
-            st.stop()
-
-        st.subheader(
-            f"GW{selected_gw} Captain Picks"
-        )
-
-        st.dataframe(
-            captain_df,
-            hide_index=True,
-            use_container_width=True
-        )
-
-        st.divider()
-
-        ownership = (
-            captain_df["Captain"]
-            .value_counts()
-            .reset_index()
-        )
-
-        ownership.columns = [
-            "Captain",
-            "Managers"
-        ]
-
-        ownership["Ownership %"] = (
-            ownership["Managers"]
-            / len(captain_df)
-            * 100
-        ).round(1)
-
-        st.subheader(
-            "Captain Ownership"
-        )
-
-        st.dataframe(
-            ownership,
-            hide_index=True,
-            use_container_width=True
-        )
-
-        st.divider()
-
-        eo_rows = []
-
-        total_managers = len(
-            captain_df
-        )
-
-        for player in eo_count:
-
-            own_pct = round(
-                eo_count[player]
-                / total_managers
-                * 100,
-                1
-            )
-
-            cap_pct = round(
-                captain_count.get(
-                    player,
-                    0
-                )
-                / total_managers
-                * 100,
-                1
-            )
-
-            eo_rows.append(
-                {
-                    "Player": player,
-                    "Ownership %": own_pct,
-                    "Captain %": cap_pct,
-                    "EO %": round(
-                        own_pct + cap_pct,
-                        1
-                    )
-                }
-            )
-
-        eo_df = (
-            pd.DataFrame(eo_rows)
-            .sort_values(
-                "EO %",
-                ascending=False
-            )
-        )
-
-        st.subheader(
-            "Effective Ownership"
-        )
-
-        st.dataframe(
-            eo_df.head(20),
-            hide_index=True,
-            use_container_width=True
-        )
-
-    except Exception as e:
-
-        st.error(
-            f"Error loading captain picks: {e}"
-        )
-
-          
-
 elif menu == "Transfer Activity":
 
     st.title("🔄 Transfer Activity")
@@ -3766,3 +3543,299 @@ elif menu == "Statistics":
         st.error(
             f"Error loading statistics: {e}"
         )
+
+elif menu == "Captain Picks":
+
+    st.title("🧢 Captain Picks")
+
+    LEAGUE_ID = 147447
+
+    try:
+
+        bootstrap = requests.get(
+            "https://fantasy.premierleague.com/api/bootstrap-static/",
+            timeout=20
+        ).json()
+
+        current_gw = next(
+            e["id"]
+            for e in bootstrap["events"]
+            if e["is_current"]
+        )
+
+        selected_gw = st.selectbox(
+            "Select Gameweek",
+            list(range(1, current_gw + 1)),
+            index=current_gw - 1
+        )
+
+        players = pd.DataFrame(
+            bootstrap["elements"]
+        )
+
+        player_lookup = dict(
+            zip(
+                players["id"],
+                players["web_name"]
+            )
+        )
+
+        league = requests.get(
+            f"https://fantasy.premierleague.com/api/leagues-classic/{LEAGUE_ID}/standings/",
+            timeout=20
+        ).json()
+
+        entries = league["standings"]["results"]
+
+        rows = []
+
+        eo_count = {}
+        captain_count = {}
+        vice_count = {}
+
+        for manager in entries:
+
+            try:
+
+                entry_id = manager["entry"]
+
+                picks = requests.get(
+                    f"https://fantasy.premierleague.com/api/entry/{entry_id}/event/{selected_gw}/picks/",
+                    timeout=20
+                ).json()
+
+                if "picks" not in picks:
+                    continue
+
+                captain = None
+                vice = None
+
+                for p in picks["picks"]:
+
+                    player_name = player_lookup.get(
+                        p["element"],
+                        "Unknown"
+                    )
+
+                    eo_count[player_name] = (
+                        eo_count.get(
+                            player_name,
+                            0
+                        ) + 1
+                    )
+
+                    if p["is_captain"]:
+
+                        captain = player_name
+
+                        captain_count[player_name] = (
+                            captain_count.get(
+                                player_name,
+                                0
+                            ) + 1
+                        )
+
+                    if p["is_vice_captain"]:
+
+                        vice = player_name
+
+                        vice_count[player_name] = (
+                            vice_count.get(
+                                player_name,
+                                0
+                            ) + 1
+                        )
+
+                rows.append(
+                    {
+                        "Team": manager["entry_name"],
+                        "Manager": manager["player_name"],
+                        "Captain": captain,
+                        "Vice Captain": vice
+                    }
+                )
+
+            except Exception:
+                continue
+
+        captain_df = pd.DataFrame(rows)
+
+        st.subheader(
+            f"GW{selected_gw} Captain Picks"
+        )
+
+        st.dataframe(
+            captain_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        total_managers = len(
+            captain_df
+        )
+
+        st.divider()
+
+        ownership = (
+            captain_df["Captain"]
+            .value_counts()
+            .reset_index()
+        )
+
+        ownership.columns = [
+            "Captain",
+            "Managers"
+        ]
+
+        ownership["Ownership"] = (
+            ownership["Managers"]
+            / total_managers
+            * 100
+        ).round(1)
+
+        st.subheader(
+            "🏆 Captain Ownership"
+        )
+
+        st.dataframe(
+            ownership,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        vice_df = (
+            pd.Series(
+                vice_count
+            )
+            .sort_values(
+                ascending=False
+            )
+            .reset_index()
+        )
+
+        vice_df.columns = [
+            "Vice Captain",
+            "Managers"
+        ]
+
+        vice_df["Ownership"] = (
+            vice_df["Managers"]
+            / total_managers
+            * 100
+        ).round(1)
+
+        st.subheader(
+            "🎖 Vice Captain Ownership"
+        )
+
+        st.dataframe(
+            vice_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        eo_rows = []
+
+        for player in eo_count:
+
+            own_pct = round(
+                eo_count[player]
+                / total_managers
+                * 100,
+                1
+            )
+
+            cap_pct = round(
+                captain_count.get(
+                    player,
+                    0
+                )
+                / total_managers
+                * 100,
+                1
+            )
+
+            eo_rows.append(
+                {
+                    "Player": player,
+                    "Ownership": own_pct,
+                    "Captain": cap_pct,
+                    "EO": round(
+                        own_pct + cap_pct,
+                        1
+                    )
+                }
+            )
+
+        eo_df = (
+            pd.DataFrame(
+                eo_rows
+            )
+            .sort_values(
+                "EO",
+                ascending=False
+            )
+        )
+
+        st.subheader(
+            "📈 Effective Ownership"
+        )
+
+        st.dataframe(
+            eo_df.head(20),
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        wa_text = (
+            f"🧢 FPL CAPTAIN REPORT GW{selected_gw}\n\n"
+        )
+
+        wa_text += "🏆 TOP 3 CAPTAINS\n"
+
+        for _, row in ownership.head(3).iterrows():
+
+            wa_text += (
+                f"• {row['Captain']} "
+                f"({row['Ownership']}%)\n"
+            )
+
+        wa_text += "\n🎖 TOP 3 VICE CAPTAINS\n"
+
+        for _, row in vice_df.head(3).iterrows():
+
+            wa_text += (
+                f"• {row['Vice Captain']} "
+                f"({row['Ownership']}%)\n"
+            )
+
+        wa_text += "\n📈 TOP 5 EO\n"
+
+        for _, row in eo_df.head(5).iterrows():
+
+            wa_text += (
+                f"• {row['Player']} "
+                f"({row['EO']}%)\n"
+            )
+
+        st.subheader(
+            "📱 Copy To WhatsApp"
+        )
+
+        st.code(
+            wa_text,
+            language="text"
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Error loading captain picks: {e}"
+        )
+
