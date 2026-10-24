@@ -210,6 +210,8 @@ if menu == "Saham":
         [
             "IDX Nexus",
             "Value Screener",
+            "Momentum Screener",
+            "Right Issue Calc",
             "MyPorto"
         ]
     )
@@ -4371,3 +4373,220 @@ Differentials:
         st.error(
             f"Error loading rival analysis: {e}"
         )
+elif idx_menu == "Rights Issue Calculator":
+
+    st.title(
+        "🎁 Rights Issue Calculator"
+    )
+
+    ticker = st.selectbox(
+        "Ticker",
+        portfolio_df["Ticker"]
+    )
+
+    row = portfolio_df[
+        portfolio_df["Ticker"]
+        == ticker
+    ].iloc[0]
+
+    lots = int(
+        row["Lot"]
+    )
+
+    avg_buy = float(
+        row["Avg Buy"]
+    )
+
+    shares = lots * 100
+
+    current_price = 0
+
+    try:
+
+        hist = yf.Ticker(
+            ticker + ".JK"
+        ).history(
+            period="5d"
+        )
+
+        current_price = float(
+            hist["Close"]
+            .iloc[-1]
+        )
+
+    except:
+        pass
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        rights_price = st.number_input(
+            "RI Price",
+            min_value=1.0,
+            value=max(
+                1.0,
+                current_price * 0.8
+            )
+        )
+
+    with col2:
+
+        ratio_denominator = st.number_input(
+            "Ratio (1 : X)",
+            min_value=1,
+            value=5
+        )
+
+    rights_shares = int(
+        shares
+        / ratio_denominator
+    )
+
+    required_funds = (
+        rights_shares
+        * rights_price
+    )
+
+    discount_pct = round(
+        (
+            (
+                current_price
+                - rights_price
+            )
+            /
+            current_price
+        )
+        * 100,
+        2
+    ) if current_price > 0 else 0
+
+    terp = (
+        (
+            ratio_denominator
+            * current_price
+        )
+        +
+        rights_price
+    ) / (
+        ratio_denominator
+        + 1
+    ) if current_price > 0 else 0
+
+    result_df = pd.DataFrame(
+        [
+            {
+                "Metric":
+                "Current Price",
+
+                "Value":
+                f"{current_price:,.0f}"
+            },
+            {
+                "Metric":
+                "RI Price",
+
+                "Value":
+                f"{rights_price:,.0f}"
+            },
+            {
+                "Metric":
+                "Discount",
+
+                "Value":
+                f"{discount_pct:.2f}%"
+            },
+            {
+                "Metric":
+                "Owned Shares",
+
+                "Value":
+                f"{shares:,}"
+            },
+            {
+                "Metric":
+                "Rights Shares",
+
+                "Value":
+                f"{rights_shares:,}"
+            },
+            {
+                "Metric":
+                "Required Funds",
+
+                "Value":
+                f"Rp {required_funds:,.0f}"
+            },
+            {
+                "Metric":
+                "TERP",
+
+                "Value":
+                f"{terp:,.0f}"
+            }
+        ]
+    )
+
+    st.dataframe(
+        result_df,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    score = 0
+
+    if discount_pct >= 20:
+
+        score += 3
+
+    elif discount_pct >= 10:
+
+        score += 2
+
+    elif discount_pct >= 5:
+
+        score += 1
+
+    if current_price > terp:
+
+        score += 2
+
+    if score >= 5:
+
+        rating = "🔥 Attractive"
+
+    elif score >= 3:
+
+        rating = "⚠️ Neutral"
+
+    else:
+
+        rating = "🚫 Less Attractive"
+
+    st.metric(
+        "RI Rating",
+        rating
+    )
+
+    wa_text = (
+        "🎁 RIGHTS ISSUE ANALYZER\n\n"
+        f"{ticker}\n\n"
+        f"Current Price : {current_price:,.0f}\n"
+        f"RI Price : {rights_price:,.0f}\n"
+        f"Discount : {discount_pct:.2f}%\n\n"
+        f"Ratio : 1:{ratio_denominator}\n"
+        f"Shares Owned : {shares:,}\n"
+        f"Rights Shares : {rights_shares:,}\n"
+        f"Funds Needed : Rp {required_funds:,.0f}\n\n"
+        f"TERP : {terp:,.0f}\n"
+        f"Rating : {rating}"
+    )
+
+    st.subheader(
+        "📱 Copy To WhatsApp"
+    )
+
+    st.code(
+        wa_text,
+        language="text"
+    )
