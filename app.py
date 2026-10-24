@@ -5103,6 +5103,10 @@ elif menu == "Price Momentum":
 
             ticker = row["Ticker"]
 
+            avg_buy = float(
+                row["Avg Buy"]
+            )
+
             hist = yf.Ticker(
                 ticker + ".JK"
             ).history(
@@ -5110,6 +5114,7 @@ elif menu == "Price Momentum":
             )
 
             if len(hist) < 130:
+
                 continue
 
             close = hist["Close"]
@@ -5186,60 +5191,70 @@ elif menu == "Price Momentum":
                 .mean()
             )
 
-            recommendation_score = 0
+            discount_avg = round(
+                (
+                    (
+                        current_price
+                        - avg_buy
+                    )
+                    /
+                    avg_buy
+                )
+                * 100,
+                2
+            )
+
+            score = 0
 
             if ret_1m > 5:
-
-                recommendation_score += 1
+                score += 1
 
             if ret_3m > 15:
-
-                recommendation_score += 2
+                score += 2
 
             if ret_6m > 30:
-
-                recommendation_score += 2
+                score += 2
 
             if current_price > ma20:
-
-                recommendation_score += 1
+                score += 1
 
             if current_price > ma50:
-
-                recommendation_score += 1
+                score += 1
 
             if (
                 current_price
                 >= high_52w * 0.95
             ):
-
-                recommendation_score += 2
+                score += 2
 
             if vol_ratio > 1.5:
+                score += 1
 
-                recommendation_score += 1
+            if score >= 8:
 
-            if recommendation_score >= 8:
+                rating = "🚀 Strong Momentum"
 
-                rating = "🔥 Strong Buy"
+            elif score >= 5:
 
-            elif recommendation_score >= 5:
-
-                rating = "✅ Building"
+                rating = "📈 Uptrend"
 
             else:
 
-                rating = "⚠️ Weak"
+                rating = "⏸ Sideways"
 
             rows.append(
                 {
                     "Ticker":
                     ticker,
 
+                    "Avg Buy":
+                    round(avg_buy),
+
                     "Price":
-                    round(
-                        current_price
-                    ),
+                    round(current_price),
+
+                    "Disc Avg %":
+                    discount_avg,
 
                     "1M %":
                     ret_1m,
@@ -5251,20 +5266,16 @@ elif menu == "Price Momentum":
                     ret_6m,
 
                     "52W Low":
-                    round(
-                        low_52w
-                    ),
+                    round(low_52w),
 
                     "52W High":
-                    round(
-                        high_52w
-                    ),
+                    round(high_52w),
 
                     "Rating":
                     rating,
 
                     "Score":
-                    recommendation_score
+                    score
                 }
             )
 
@@ -5291,21 +5302,25 @@ elif menu == "Price Momentum":
             )
         )
 
-        display_df = momentum_df[
-            [
-                "Ticker",
-                "Price",
-                "1M %",
-                "3M %",
-                "6M %",
-                "52W Low",
-                "52W High",
-                "Rating"
-            ]
-        ]
+        st.subheader(
+            "📈 Portfolio Momentum"
+        )
 
         st.dataframe(
-            display_df,
+            momentum_df[
+                [
+                    "Ticker",
+                    "Avg Buy",
+                    "Price",
+                    "Disc Avg %",
+                    "1M %",
+                    "3M %",
+                    "6M %",
+                    "52W Low",
+                    "52W High",
+                    "Rating"
+                ]
+            ],
             hide_index=True,
             use_container_width=True
         )
@@ -5329,21 +5344,82 @@ elif menu == "Price Momentum":
 
 Price : {row['Price']:,.0f}
 
-52W Range :
-{row['52W Low']:,.0f}
--
-{row['52W High']:,.0f}
+Avg Buy :
+{row['Avg Buy']:,.0f}
 
 1M : {row['1M %']}%
 3M : {row['3M %']}%
 6M : {row['6M %']}%
 
+52W Range :
+{row['52W Low']:,.0f}
+-
+{row['52W High']:,.0f}
+
 {row['Rating']}
 """
             )
 
+        st.divider()
+
+        st.subheader(
+            "🎯 Average Down Opportunities"
+        )
+
+        avg_down_df = momentum_df[
+            (
+                momentum_df[
+                    "Disc Avg %"
+                ]
+                < 0
+            )
+            &
+            (
+                momentum_df[
+                    "Rating"
+                ]
+                != "⏸ Sideways"
+            )
+        ]
+
+        if avg_down_df.empty:
+
+            st.info(
+                "No average down opportunities."
+            )
+
+        else:
+
+            avg_down_df = (
+                avg_down_df
+                .sort_values(
+                    "Disc Avg %",
+                    ascending=True
+                )
+            )
+
+            st.dataframe(
+                avg_down_df[
+                    [
+                        "Ticker",
+                        "Avg Buy",
+                        "Price",
+                        "Disc Avg %",
+                        "Rating"
+                    ]
+                ],
+                hide_index=True,
+                use_container_width=True
+            )
+
+        st.divider()
+
         wa_text = (
             "🚀 PRICE MOMENTUM\n\n"
+        )
+
+        wa_text += (
+            "🏆 TOP MOMENTUM\n\n"
         )
 
         for i, (_, row) in enumerate(
@@ -5354,11 +5430,30 @@ Price : {row['Price']:,.0f}
             wa_text += (
                 f"{i}. {row['Ticker']}\n"
                 f"Price {row['Price']:,.0f}\n"
-                f"1M {row['1M %']}%\n"
                 f"3M {row['3M %']}%\n"
                 f"6M {row['6M %']}%\n"
                 f"{row['Rating']}\n\n"
             )
+
+        if not avg_down_df.empty:
+
+            wa_text += (
+                "🎯 AVG DOWN\n\n"
+            )
+
+            for _, row in (
+                avg_down_df
+                .head(5)
+                .iterrows()
+            ):
+
+                wa_text += (
+                    f"• {row['Ticker']}\n"
+                    f"Avg {row['Avg Buy']:,.0f}\n"
+                    f"Now {row['Price']:,.0f}\n"
+                    f"{row['Disc Avg %']}%\n"
+                    f"{row['Rating']}\n\n"
+                )
 
         st.subheader(
             "📱 Copy To WhatsApp"
