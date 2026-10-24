@@ -3924,6 +3924,11 @@ elif menu == "Statistics":
                 .str[:-6]
             )
 
+            stats_df["DefCon"] = pd.to_numeric(
+                stats_df["DefCon"],
+                errors="coerce"
+            ).fillna(0)
+
             stats_df = stats_df.head(10)
 
         else:
@@ -3966,14 +3971,17 @@ elif menu == "Statistics":
                 selected_stat
             ]
 
-            stats_df = (
-                stats_df
-                .sort_values(
-                    selected_stat,
-                    ascending=False
-                )
-                .head(10)
+            stats_df[selected_stat] = pd.to_numeric(
+                stats_df[selected_stat],
+                errors="coerce"
+            ).fillna(0)
+
+            stats_df = stats_df.sort_values(
+                selected_stat,
+                ascending=False
             )
+
+            stats_df = stats_df.head(10)
 
             stats_df.insert(
                 0,
@@ -4003,9 +4011,17 @@ elif menu == "Statistics":
             .iterrows()
         ):
 
-            value = row[
-                selected_stat
-            ]
+            value = row[selected_stat]
+
+            if isinstance(
+                value,
+                float
+            ):
+
+                value = round(
+                    value,
+                    1
+                )
 
             wa_text += (
                 f"• {row['Player']} "
