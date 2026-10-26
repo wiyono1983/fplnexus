@@ -205,7 +205,8 @@ if menu == "Saham":
             "Dividend Tracker",
             "Dividend Momemtum",
             "Right Issue Calc",
-            "MyPorto"
+            "MyPorto",
+            "Import Portofolio"
         ]
     )
 
@@ -5381,6 +5382,58 @@ Differentials:
                 f"{team_a}\n"
                 f"Rank #{rank_a}\n"
                 f"{points_a} pts\n\n"
+            )
+elif menu == "Import Portfolio":
+
+    st.title("📥 Import Portfolio CSV")
+
+    uploaded_file = st.file_uploader(
+        "Upload portfolio.csv",
+        type=["csv"]
+    )
+
+    if uploaded_file:
+
+        try:
+
+            df = pd.read_csv(uploaded_file)
+
+            required_cols = [
+                "Ticker",
+                "Lot",
+                "Avg Buy"
+            ]
+
+            if not all(
+                col in df.columns
+                for col in required_cols
+            ):
+                st.error(
+                    "CSV harus memiliki kolom: Ticker, Lot, Avg Buy"
+                )
+
+            else:
+
+                df.to_csv(
+                    "portfolio.csv",
+                    index=False,
+                    float_format="%.2f"
+                )
+
+                st.success(
+                    "✅ Portfolio berhasil di-import"
+                )
+
+                st.dataframe(
+                    df,
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+        except Exception as e:
+
+            st.error(
+                f"Import gagal: {e}"
             )
 
             wa_text += (
