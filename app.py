@@ -279,8 +279,6 @@ if menu == "Saham":
             "IDX Nexus",
             "Portfolio Radar",
             "Analisa Saham",
-            "Portfolio Health",
-            "Momentum Scanner",
             "Breakout Scanner",
             "Support Resistance",
             "Avg Down Planner",
@@ -5592,85 +5590,7 @@ elif menu == "Import Portfolio":
             )
 
 
-elif menu == "Breakout Scanner":
 
-    st.title(
-        "🚀 Breakout Scanner"
-    )
-
-    breakout_rows = []
-
-    portfolio_df = pd.read_csv(
-        "portfolio.csv"
-    )
-
-    for _, row in portfolio_df.iterrows():
-
-        try:
-
-            ticker = (
-                row["Ticker"]
-                + ".JK"
-            )
-
-            hist = yf.Ticker(
-                ticker
-            ).history(
-                period="6mo"
-            )
-
-            resistance = (
-                hist["High"]
-                .tail(20)
-                .iloc[:-1]
-                .max()
-            )
-
-            close = (
-                hist["Close"]
-                .iloc[-1]
-            )
-
-            vol_ratio = (
-                hist["Volume"]
-                .iloc[-1]
-                /
-                hist["Volume"]
-                .tail(20)
-                .mean()
-            )
-
-            if (
-                close > resistance
-                and
-                vol_ratio > 1.5
-            ):
-
-                breakout_rows.append(
-                    {
-                        "Ticker":
-                        row["Ticker"],
-
-                        "Close":
-                        round(close),
-
-                        "Volume":
-                        round(
-                            vol_ratio,
-                            2
-                        )
-                    }
-                )
-
-        except:
-            pass
-
-    st.dataframe(
-        pd.DataFrame(
-            breakout_rows
-        ),
-        use_container_width=True
-    )
 elif menu == "Distribution Scanner":
 
     st.title(
@@ -6436,5 +6356,414 @@ Volume tinggi belum tentu bullish.
 
 ❌ Harga turun + volume tinggi
 = distribusi / tekanan jual.
+"""
+        )
+
+
+elif menu == "Breakout Scanner":
+
+    st.title("🚀 Breakout Scanner")
+
+    portfolio_df = pd.read_csv(
+        "portfolio.csv"
+    )
+
+    breakout_rows = []
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = (
+                row["Ticker"]
+                + ".JK"
+            )
+
+            hist = yf.Ticker(
+                ticker
+            ).history(
+                period="6mo"
+            )
+
+            if len(hist) < 60:
+
+                continue
+
+            hist["RSI"] = calculate_rsi(
+                hist["Close"]
+            )
+
+            resistance = (
+                hist["High"]
+                .tail(20)
+                .iloc[:-1]
+                .max()
+            )
+
+            close = float(
+                hist["Close"]
+                .iloc[-1]
+            )
+
+            high = float(
+                hist["High"]
+                .iloc[-1]
+            )
+
+            low = float(
+                hist["Low"]
+                .iloc[-1]
+            )
+
+            open_price = float(
+                hist["Open"]
+                .iloc[-1]
+            )
+
+            rsi = round(
+                hist["RSI"]
+                .iloc[-1],
+                2
+            )
+
+            vol_ratio = round(
+                hist["Volume"]
+                .iloc[-1]
+                /
+                hist["Volume"]
+                .tail(20)
+                .mean(),
+                2
+            )
+
+            breakout = (
+                close > resistance
+                and
+                vol_ratio > 1.5
+            )
+
+            if not breakout:
+
+                continue
+
+            upper_shadow = (
+                high
+                -
+                max(
+                    close,
+                    open_price
+                )
+            )
+
+            candle_range = (
+                high - low
+            )
+
+            distribution = False
+
+            if candle_range > 0:
+
+                distribution = (
+                    upper_shadow
+                    >
+                    candle_range * 0.4
+                )
+
+            close_ratio = round(
+                (
+                    close
+                    /
+                    high
+                )
+                * 100,
+                1
+            )
+
+            if close_ratio >= 98:
+
+                close_status = "✅ Near High"
+
+            elif close_ratio >= 95:
+
+                close_status = "🟡 OK"
+
+            else:
+
+                close_status = "⚠️ Far From High"
+
+            if distribution:
+
+                candle_status = (
+                    "⚠️ Distribution"
+                )
+
+            else:
+
+                candle_status = (
+                    "✅ Strong"
+                )
+
+            if (
+                vol_ratio >= 3
+                and
+                60 <= rsi <= 75
+                and
+                not distribution
+            ):
+
+                signal = (
+                    "🔥 Strong Breakout"
+                )
+
+            elif (
+                vol_ratio >= 2
+                and
+                rsi < 80
+                and
+                not distribution
+            ):
+
+                signal = (
+                    "🚀 Breakout"
+                )
+
+            elif distribution:
+
+                signal = (
+                    "⚠️ Distribution Warning"
+                )
+
+            elif rsi > 80:
+
+                signal = (
+                    "⚠️ Overbought"
+                )
+
+            else:
+
+                signal = (
+                    "👀 Watch"
+                )
+
+            breakout_rows.append(
+                {
+                    "Ticker":
+                    row["Ticker"],
+
+                    "Close":
+                    round(close),
+
+                    "Vol Ratio":
+                    vol_ratio,
+
+                    "RSI":
+                    rsi,
+
+                    "Close High":
+                    close_status,
+
+                    "Candle":
+                    candle_status,
+
+                    "Signal":
+                    signal
+                }
+            )
+
+        except:
+
+            pass
+
+    breakout_df = pd.DataFrame(
+        breakout_rows
+    )
+
+    if breakout_df.empty:
+
+        st.info(
+            "Tidak ada breakout terdeteksi."
+        )
+
+    else:
+
+        st.dataframe(
+            breakout_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        strong_df = breakout_df[
+            breakout_df["Signal"]
+            ==
+            "🔥 Strong Breakout"
+        ]
+
+        if not strong_df.empty:
+
+            st.success(
+                f"""
+🔥 Strong Breakout
+
+{', '.join(strong_df['Ticker'])}
+
+Volume sangat kuat.
+RSI masih sehat.
+Tidak ada tanda distribusi.
+"""
+            )
+
+        dist_df = breakout_df[
+            breakout_df["Signal"]
+            ==
+            "⚠️ Distribution Warning"
+        ]
+
+        if not dist_df.empty:
+
+            st.warning(
+                f"""
+⚠️ Distribution Warning
+
+{', '.join(dist_df['Ticker'])}
+
+Volume tinggi tetapi ada indikasi
+profit taking atau distribusi.
+"""
+            )
+
+        st.divider()
+
+        st.subheader(
+            "📊 Panduan Volume Ratio"
+        )
+
+        volume_df = pd.DataFrame(
+            [
+                [
+                    "< 1.5x",
+                    "Volume Lemah"
+                ],
+                [
+                    "1.5x - 2x",
+                    "Breakout Valid"
+                ],
+                [
+                    "2x - 3x",
+                    "Breakout Kuat"
+                ],
+                [
+                    "> 3x",
+                    "Strong Breakout"
+                ]
+            ],
+            columns=[
+                "Volume Ratio",
+                "Interpretasi"
+            ]
+        )
+
+        st.dataframe(
+            volume_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.subheader(
+            "📈 Panduan RSI"
+        )
+
+        rsi_df = pd.DataFrame(
+            [
+                [
+                    "< 30",
+                    "Oversold"
+                ],
+                [
+                    "30 - 50",
+                    "Lemah"
+                ],
+                [
+                    "50 - 60",
+                    "Bullish Awal"
+                ],
+                [
+                    "60 - 70",
+                    "Bullish Sehat"
+                ],
+                [
+                    "70 - 80",
+                    "Mulai Panas"
+                ],
+                [
+                    "> 80",
+                    "Overbought"
+                ]
+            ],
+            columns=[
+                "RSI",
+                "Interpretasi"
+            ]
+        )
+
+        st.dataframe(
+            rsi_df,
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.subheader(
+            "📖 Cara Membaca Breakout"
+        )
+
+        st.info(
+            """
+🔥 Strong Breakout
+
+• Volume > 3x rata-rata
+• RSI 60-75
+• Close dekat High
+• Tidak ada distribusi
+
+------------------------------------
+
+🚀 Breakout Ideal
+
+• Volume > 2x
+• RSI 55-75
+• Close dekat High
+
+------------------------------------
+
+⚠️ Distribution Warning
+
+• Volume tinggi
+• Ekor atas panjang
+• Close jauh dari High
+
+Menandakan adanya profit taking.
+
+------------------------------------
+
+⚠️ Overbought
+
+• RSI > 80
+
+Harga terlalu panas.
+Risiko koreksi meningkat.
+
+------------------------------------
+
+✅ Breakout Terbaik
+
+Volume > 2x
+
+RSI 60-75
+
+Close dekat High
+
+Tidak ada ekor atas panjang
+atau distribusi.
 """
         )
