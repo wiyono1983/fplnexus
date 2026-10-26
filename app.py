@@ -184,6 +184,83 @@ def show_fixtures():
         st.error(
             f"Error: {e}"
         )
+def calculate_rsi(close, period=14):
+
+    delta = close.diff()
+
+    gain = delta.clip(lower=0)
+
+    loss = -delta.clip(upper=0)
+
+    avg_gain = gain.rolling(period).mean()
+
+    avg_loss = loss.rolling(period).mean()
+
+    rs = avg_gain / avg_loss
+
+    return 100 - (100 / (1 + rs))
+def calculate_macd(close):
+
+    ema12 = close.ewm(
+        span=12,
+        adjust=False
+    ).mean()
+
+    ema26 = close.ewm(
+        span=26,
+        adjust=False
+    ).mean()
+
+    macd = ema12 - ema26
+
+    signal = macd.ewm(
+        span=9,
+        adjust=False
+    ).mean()
+
+    histogram = macd - signal
+
+    return (
+        macd,
+        signal,
+        histogram
+    )
+def calculate_obv(df):
+
+    obv = [0]
+
+    for i in range(
+        1,
+        len(df)
+    ):
+
+        if (
+            df["Close"].iloc[i]
+            >
+            df["Close"].iloc[i-1]
+        ):
+
+            obv.append(
+                obv[-1]
+                + df["Volume"].iloc[i]
+            )
+
+        elif (
+            df["Close"].iloc[i]
+            <
+            df["Close"].iloc[i-1]
+        ):
+
+            obv.append(
+                obv[-1]
+                - df["Volume"].iloc[i]
+            )
+
+        else:
+
+            obv.append(obv[-1])
+
+    return obv
 
 # =========================
 # SIDEBAR
@@ -200,10 +277,17 @@ if menu == "Saham":
         "Menu Saham",
         [
             "IDX Nexus",
+            "Portfolio Radar",
+            "Analisa Saham",
+            "Portfolio Health",
+            "Momentum Scanner",
+            "Breakout Scanner",
+            "Support Resistance",
+            "Avg Down Planner",
             "Value Screener",
             "Price Momentum",
             "Dividend Tracker",
-            "Dividend Momemtum",
+            "Dividend Momentum",
             "Right Issue Calc",
             "MyPorto",
             "Import Portfolio"
@@ -5506,3 +5590,384 @@ elif menu == "Import Portfolio":
             st.error(
                 f"Import gagal: {e}"
             )
+
+elif menu == "Portfolio Radar":
+
+    st.title("📡 Portfolio Radar")
+
+    portfolio_df = pd.read_csv(
+        "portfolio.csv"
+    )
+
+    radar_rows = []
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = (
+                row["Ticker"]
+                + ".JK"
+            )
+
+            hist = yf.Ticker(
+                ticker
+            ).history(
+                period="6mo"
+            )
+
+            if len(hist) < 60:
+                continue
+
+            hist["MA20"] = (
+                hist["Close"]
+                .rolling(20)
+                .mean()
+            )
+
+            hist["MA50"] = (
+                hist["Close"]
+                .rolling(50)
+                .mean()
+            )
+
+            close = (
+                hist["Close"]
+                .iloc[-1]
+            )
+
+            ma20 = (
+                hist["MA20"]
+                .iloc[-1]
+            )
+
+            ma50 = (
+                hist["MA50"]
+                .iloc[-1]
+            )
+
+            avg_vol = (
+                hist["Volume"]
+                .tail(20)
+                .mean()
+            )
+
+            vol_ratio = round(
+                hist["Volume"]
+                .iloc[-1]
+                / avg_vol,
+                2
+            )
+
+            if close > ma20 > ma50:
+
+                status = "🟢 Uptrend"
+
+            elif close > ma20:
+
+                status = "🟡 Watch"
+
+            else:
+
+                status = "🔴 Downtrend"
+
+            radar_rows.append(
+                {
+                    "Ticker":
+                    row["Ticker"],
+
+                    "Price":
+                    round(close),
+
+                    "Volume":
+                    vol_ratio,
+
+                    "Trend":
+                    status
+                }
+            )
+
+        except:
+            pass
+
+    radar_df = pd.DataFrame(
+        radar_rows
+    )
+
+    st.dataframe(
+        radar_df,
+        use_container_width=True
+    )
+analysis_menu = st.selectbox(
+    "Analisa",
+    [
+        "Dashboard",
+        "Support Resistance",
+        "RSI MACD",
+        "OBV",
+        "Volume",
+        "Average Down",
+        "Full Analysis"
+    ]
+)
+elif menu == "Breakout Scanner":
+
+    st.title(
+        "🚀 Breakout Scanner"
+    )
+
+    breakout_rows = []
+
+    portfolio_df = pd.read_csv(
+        "portfolio.csv"
+    )
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = (
+                row["Ticker"]
+                + ".JK"
+            )
+
+            hist = yf.Ticker(
+                ticker
+            ).history(
+                period="6mo"
+            )
+
+            resistance = (
+                hist["High"]
+                .tail(20)
+                .iloc[:-1]
+                .max()
+            )
+
+            close = (
+                hist["Close"]
+                .iloc[-1]
+            )
+
+            vol_ratio = (
+                hist["Volume"]
+                .iloc[-1]
+                /
+                hist["Volume"]
+                .tail(20)
+                .mean()
+            )
+
+            if (
+                close > resistance
+                and
+                vol_ratio > 1.5
+            ):
+
+                breakout_rows.append(
+                    {
+                        "Ticker":
+                        row["Ticker"],
+
+                        "Close":
+                        round(close),
+
+                        "Volume":
+                        round(
+                            vol_ratio,
+                            2
+                        )
+                    }
+                )
+
+        except:
+            pass
+
+    st.dataframe(
+        pd.DataFrame(
+            breakout_rows
+        ),
+        use_container_width=True
+    )
+elif menu == "Distribution Scanner":
+
+    st.title(
+        "⚠️ Distribution Scanner"
+    )
+
+    rows = []
+
+    portfolio_df = pd.read_csv(
+        "portfolio.csv"
+    )
+
+    for _, row in portfolio_df.iterrows():
+
+        try:
+
+            ticker = (
+                row["Ticker"]
+                + ".JK"
+            )
+
+            hist = yf.Ticker(
+                ticker
+            ).history(
+                period="3mo"
+            )
+
+            high = (
+                hist["High"]
+                .iloc[-1]
+            )
+
+            low = (
+                hist["Low"]
+                .iloc[-1]
+            )
+
+            close = (
+                hist["Close"]
+                .iloc[-1]
+            )
+
+            open_price = (
+                hist["Open"]
+                .iloc[-1]
+            )
+
+            avg_vol = (
+                hist["Volume"]
+                .tail(20)
+                .mean()
+            )
+
+            vol_ratio = (
+                hist["Volume"]
+                .iloc[-1]
+                /
+                avg_vol
+            )
+
+            upper_shadow = (
+                high
+                -
+                max(
+                    close,
+                    open_price
+                )
+            )
+
+            distribution = (
+                vol_ratio > 1.5
+                and
+                upper_shadow >
+                ((high-low)*0.4)
+            )
+
+            if distribution:
+
+                rows.append(
+                    {
+                        "Ticker":
+                        row["Ticker"],
+
+                        "Volume":
+                        round(
+                            vol_ratio,
+                            2
+                        ),
+
+                        "Signal":
+                        "DISTRIBUSI"
+                    }
+                )
+
+        except:
+            pass
+
+    st.dataframe(
+        pd.DataFrame(rows),
+        use_container_width=True
+    )
+elif menu == "Avg Down Planner":
+
+    st.title(
+        "🎯 Avg Down Planner"
+    )
+
+    portfolio_df = pd.read_csv(
+        "portfolio.csv"
+    )
+
+    ticker = st.selectbox(
+        "Stock",
+        portfolio_df["Ticker"]
+    )
+
+    lot_plan = st.selectbox(
+        "Tambah Lot",
+        [1,2,5,10,20,50]
+    )
+
+    row = portfolio_df[
+        portfolio_df["Ticker"]
+        == ticker
+    ].iloc[0]
+
+    current_lot = int(
+        row["Lot"]
+    )
+
+    avg_buy = float(
+        row["Avg Buy"]
+    )
+
+    current_price = yf.Ticker(
+        ticker
+        + ".JK"
+    ).history(
+        period="5d"
+    )["Close"].iloc[-1]
+
+    current_shares = (
+        current_lot
+        * 100
+    )
+
+    add_shares = (
+        lot_plan
+        * 100
+    )
+
+    new_avg = (
+        (
+            current_shares
+            * avg_buy
+        )
+        +
+        (
+            add_shares
+            * current_price
+        )
+    ) / (
+        current_shares
+        +
+        add_shares
+    )
+
+    st.metric(
+        "Current Avg",
+        round(avg_buy)
+    )
+
+    st.metric(
+        "Current Price",
+        round(current_price)
+    )
+
+    st.metric(
+        "New Avg",
+        round(new_avg)
+    )
+
