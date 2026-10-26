@@ -5968,8 +5968,8 @@ elif menu == "Analisa Saham":
              hist["OBV"]
         )
 
-    obv_now = hist["OBV"].iloc[-1]
-    obv_20 = hist["OBV"].iloc[-20]
+        obv_now = hist["OBV"].iloc[-1]
+        obv_20 = hist["OBV"].iloc[-20]
 
     if obv_now > obv_20:
 
@@ -6001,14 +6001,14 @@ Waspadai pelemahan harga.
 """
         )
 
-    st.divider()
+        st.divider()
 
-    st.subheader(
-        "📖 Cara Membaca OBV"
-    )
+        st.subheader(
+           "📖 Cara Membaca OBV"
+        )
 
-    st.info(
-        """
+        st.info(
+            """
 ✅ OBV Naik
 
 Volume masuk ke saham.
@@ -6050,7 +6050,6 @@ Tekanan jual masih dominan.
 Trend masih lemah.
 """
     )
-
 
     elif analysis_menu == "Volume":
 
