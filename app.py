@@ -5960,13 +5960,97 @@ elif menu == "Analisa Saham":
 
     elif analysis_menu == "OBV":
 
-        st.subheader(
-            "On Balance Volume"
+    st.subheader(
+        "📊 On Balance Volume (OBV)"
+    )
+
+    st.line_chart(
+        hist["OBV"]
+    )
+
+    obv_now = hist["OBV"].iloc[-1]
+    obv_20 = hist["OBV"].iloc[-20]
+
+    if obv_now > obv_20:
+
+        st.success(
+            """
+✅ OBV Sedang Naik
+
+Menandakan volume cenderung masuk
+ke saham (akumulasi).
+
+Buyer lebih dominan daripada seller.
+
+Biasanya mendukung tren naik.
+"""
         )
 
-        st.line_chart(
-            hist["OBV"]
+    else:
+
+        st.warning(
+            """
+⚠️ OBV Sedang Turun
+
+Menandakan volume keluar
+dari saham (distribusi).
+
+Seller lebih dominan daripada buyer.
+
+Waspadai pelemahan harga.
+"""
         )
+
+    st.divider()
+
+    st.subheader(
+        "📖 Cara Membaca OBV"
+    )
+
+    st.info(
+        """
+✅ OBV Naik
+
+Volume masuk ke saham.
+
+Mengindikasikan akumulasi.
+
+--------------------------------
+
+✅ Harga Naik + OBV Naik
+
+Sinyal bullish paling sehat.
+
+Breakout lebih valid.
+
+--------------------------------
+
+🔥 Harga Sideways + OBV Naik
+
+Smart money mulai masuk.
+
+Sering muncul sebelum kenaikan harga.
+
+--------------------------------
+
+⚠️ Harga Naik + OBV Turun
+
+Divergence bearish.
+
+Harga naik tetapi volume keluar.
+
+Waspadai distribusi.
+
+--------------------------------
+
+⚠️ Harga Turun + OBV Turun
+
+Tekanan jual masih dominan.
+
+Trend masih lemah.
+"""
+    )
+
 
     elif analysis_menu == "Volume":
 
@@ -6360,9 +6444,20 @@ Volume tinggi belum tentu bullish.
         )
 
 
+
 elif menu == "Breakout Scanner":
 
     st.title("🚀 Breakout Scanner")
+
+    if not os.path.exists(
+        "portfolio.csv"
+    ):
+
+        st.warning(
+            "Portfolio belum ada."
+        )
+
+        st.stop()
 
     portfolio_df = pd.read_csv(
         "portfolio.csv"
@@ -6393,6 +6488,10 @@ elif menu == "Breakout Scanner":
                 hist["Close"]
             )
 
+            hist["OBV"] = calculate_obv(
+                hist
+            )
+
             resistance = (
                 hist["High"]
                 .tail(20)
@@ -6401,34 +6500,28 @@ elif menu == "Breakout Scanner":
             )
 
             close = float(
-                hist["Close"]
-                .iloc[-1]
+                hist["Close"].iloc[-1]
             )
 
             high = float(
-                hist["High"]
-                .iloc[-1]
+                hist["High"].iloc[-1]
             )
 
             low = float(
-                hist["Low"]
-                .iloc[-1]
+                hist["Low"].iloc[-1]
             )
 
             open_price = float(
-                hist["Open"]
-                .iloc[-1]
+                hist["Open"].iloc[-1]
             )
 
             rsi = round(
-                hist["RSI"]
-                .iloc[-1],
+                hist["RSI"].iloc[-1],
                 2
             )
 
             vol_ratio = round(
-                hist["Volume"]
-                .iloc[-1]
+                hist["Volume"].iloc[-1]
                 /
                 hist["Volume"]
                 .tail(20)
@@ -6439,12 +6532,36 @@ elif menu == "Breakout Scanner":
             breakout = (
                 close > resistance
                 and
-                vol_ratio > 1.5
+                vol_ratio >= 1.5
             )
 
             if not breakout:
 
                 continue
+            obv_now = (
+                hist["OBV"]
+                .iloc[-1]
+            )
+
+            obv_avg = (
+                pd.Series(
+                    hist["OBV"]
+                )
+                .tail(20)
+                .mean()
+            )
+
+            if obv_now > obv_avg:
+
+                obv_status = (
+                    "✅ Akumulasi"
+                )
+
+            else:
+
+                obv_status = (
+                    "⚠️ Distribusi"
+                )
 
             upper_shadow = (
                 high
@@ -6474,27 +6591,31 @@ elif menu == "Breakout Scanner":
                     close
                     /
                     high
-                )
-                * 100,
+                ) * 100,
                 1
             )
-
             if close_ratio >= 98:
 
-                close_status = "✅ Near High"
+                close_status = (
+                    "✅ Near High"
+                )
 
             elif close_ratio >= 95:
 
-                close_status = "🟡 OK"
+                close_status = (
+                    "🟡 OK"
+                )
 
             else:
 
-                close_status = "⚠️ Far From High"
+                close_status = (
+                    "⚠️ Far High"
+                )
 
             if distribution:
 
                 candle_status = (
-                    "⚠️ Distribution"
+                    "⚠️ Long Upper"
                 )
 
             else:
@@ -6502,47 +6623,61 @@ elif menu == "Breakout Scanner":
                 candle_status = (
                     "✅ Strong"
                 )
+            score = 0
 
-            if (
-                vol_ratio >= 3
-                and
-                60 <= rsi <= 75
-                and
-                not distribution
-            ):
+            if vol_ratio >= 3:
+
+                score += 3
+
+            elif vol_ratio >= 2:
+
+                score += 2
+
+            elif vol_ratio >= 1.5:
+
+                score += 1
+
+            if 60 <= rsi <= 75:
+
+                score += 2
+
+            elif 50 <= rsi < 60:
+
+                score += 1
+
+            if obv_status == "✅ Akumulasi":
+
+                score += 2
+
+            if close_ratio >= 98:
+
+                score += 2
+
+            if distribution:
+
+                score -= 3
+            if score >= 8:
 
                 signal = (
-                    "🔥 Strong Breakout"
+                    "🔥 Strong Entry"
                 )
 
-            elif (
-                vol_ratio >= 2
-                and
-                rsi < 80
-                and
-                not distribution
-            ):
+            elif score >= 5:
 
                 signal = (
-                    "🚀 Breakout"
+                    "🚀 Entry"
                 )
 
-            elif distribution:
+            elif score >= 3:
 
                 signal = (
-                    "⚠️ Distribution Warning"
-                )
-
-            elif rsi > 80:
-
-                signal = (
-                    "⚠️ Overbought"
+                    "👀 Watch"
                 )
 
             else:
 
                 signal = (
-                    "👀 Watch"
+                    "⚠️ Avoid"
                 )
 
             breakout_rows.append(
@@ -6559,7 +6694,10 @@ elif menu == "Breakout Scanner":
                     "RSI":
                     rsi,
 
-                    "Close High":
+                    "OBV":
+                    obv_status,
+
+                    "Close":
                     close_status,
 
                     "Candle":
@@ -6573,7 +6711,6 @@ elif menu == "Breakout Scanner":
         except:
 
             pass
-
     breakout_df = pd.DataFrame(
         breakout_rows
     )
@@ -6581,7 +6718,7 @@ elif menu == "Breakout Scanner":
     if breakout_df.empty:
 
         st.info(
-            "Tidak ada breakout terdeteksi."
+            "Tidak ada breakout."
         )
 
     else:
@@ -6591,179 +6728,188 @@ elif menu == "Breakout Scanner":
             hide_index=True,
             use_container_width=True
         )
-
-        st.divider()
-
-        strong_df = breakout_df[
+        strong_entry = breakout_df[
             breakout_df["Signal"]
             ==
-            "🔥 Strong Breakout"
+            "🔥 Strong Entry"
         ]
 
-        if not strong_df.empty:
+        if not strong_entry.empty:
 
             st.success(
                 f"""
-🔥 Strong Breakout
+🔥 Strong Entry
 
-{', '.join(strong_df['Ticker'])}
+{', '.join(
+strong_entry['Ticker']
+)}
 
-Volume sangat kuat.
-RSI masih sehat.
-Tidak ada tanda distribusi.
+Volume kuat
+RSI sehat
+OBV akumulasi
+Close dekat high
 """
             )
 
-        dist_df = breakout_df[
-            breakout_df["Signal"]
+        danger = breakout_df[
+            breakout_df["Candle"]
             ==
-            "⚠️ Distribution Warning"
+            "⚠️ Long Upper"
         ]
 
-        if not dist_df.empty:
+        if not danger.empty:
 
             st.warning(
-                f"""
+                """
 ⚠️ Distribution Warning
 
-{', '.join(dist_df['Ticker'])}
+Terdapat saham dengan
+ekor atas panjang.
 
-Volume tinggi tetapi ada indikasi
-profit taking atau distribusi.
+Menandakan adanya
+profit taking.
 """
             )
-
         st.divider()
 
         st.subheader(
-            "📊 Panduan Volume Ratio"
-        )
-
-        volume_df = pd.DataFrame(
-            [
-                [
-                    "< 1.5x",
-                    "Volume Lemah"
-                ],
-                [
-                    "1.5x - 2x",
-                    "Breakout Valid"
-                ],
-                [
-                    "2x - 3x",
-                    "Breakout Kuat"
-                ],
-                [
-                    "> 3x",
-                    "Strong Breakout"
-                ]
-            ],
-            columns=[
-                "Volume Ratio",
-                "Interpretasi"
-            ]
-        )
-
-        st.dataframe(
-            volume_df,
-            hide_index=True,
-            use_container_width=True
-        )
-
-        st.subheader(
-            "📈 Panduan RSI"
-        )
-
-        rsi_df = pd.DataFrame(
-            [
-                [
-                    "< 30",
-                    "Oversold"
-                ],
-                [
-                    "30 - 50",
-                    "Lemah"
-                ],
-                [
-                    "50 - 60",
-                    "Bullish Awal"
-                ],
-                [
-                    "60 - 70",
-                    "Bullish Sehat"
-                ],
-                [
-                    "70 - 80",
-                    "Mulai Panas"
-                ],
-                [
-                    "> 80",
-                    "Overbought"
-                ]
-            ],
-            columns=[
-                "RSI",
-                "Interpretasi"
-            ]
-        )
-
-        st.dataframe(
-            rsi_df,
-            hide_index=True,
-            use_container_width=True
-        )
-
-        st.subheader(
-            "📖 Cara Membaca Breakout"
+            "📖 Panduan Entry"
         )
 
         st.info(
             """
-🔥 Strong Breakout
+🔥 Strong Entry
 
-• Volume > 3x rata-rata
-• RSI 60-75
-• Close dekat High
-• Tidak ada distribusi
-
-------------------------------------
-
-🚀 Breakout Ideal
-
-• Volume > 2x
-• RSI 55-75
-• Close dekat High
-
-------------------------------------
-
-⚠️ Distribution Warning
-
-• Volume tinggi
-• Ekor atas panjang
-• Close jauh dari High
-
-Menandakan adanya profit taking.
-
-------------------------------------
-
-⚠️ Overbought
-
-• RSI > 80
-
-Harga terlalu panas.
-Risiko koreksi meningkat.
-
-------------------------------------
-
-✅ Breakout Terbaik
-
-Volume > 2x
+Volume > 3x
 
 RSI 60-75
 
+OBV Akumulasi
+
 Close dekat High
 
-Tidak ada ekor atas panjang
-atau distribusi.
+Tidak ada distribusi
+
+--------------------------------
+
+🚀 Entry
+
+Volume > 2x
+
+RSI sehat
+
+OBV naik
+
+--------------------------------
+
+👀 Watch
+
+Belum semua syarat terpenuhi
+
+--------------------------------
+
+⚠️ Avoid
+
+RSI terlalu tinggi
+
+OBV distribusi
+
+Close jauh dari high
+
+Distribusi terdeteksi
 """
         )
+        st.subheader(
+            "📊 Volume Ratio"
+        )
+
+        st.info(
+            """
+< 1.5x
+= Volume Lemah
+
+1.5x - 2x
+= Breakout Valid
+
+2x - 3x
+= Breakout Kuat
+
+> 3x
+= Strong Breakout
+"""
+        )
+        st.subheader(
+            "📈 RSI"
+        )
+
+        st.info(
+            """
+< 30
+= Oversold
+
+30 - 50
+= Lemah
+
+50 - 60
+= Bullish Awal
+
+60 - 70
+= Bullish Sehat
+
+70 - 80
+= Mulai Panas
+
+> 80
+= Overbought
+"""
+        )
+        st.subheader(
+            "📦 OBV & Distribusi"
+        )
+
+        st.info(
+            """
+✅ Akumulasi
+
+OBV naik
+
+Buyer dominan
+
+--------------------------------
+
+⚠️ Distribusi
+
+OBV turun
+
+Seller dominan
+
+--------------------------------
+
+✅ Near High
+
+Harga ditutup dekat high hari ini.
+
+Buyer masih kuat.
+
+--------------------------------
+
+⚠️ Far High
+
+Harga ditutup jauh dari high.
+
+Waspadai distribusi.
+
+--------------------------------
+
+⚠️ Long Upper Shadow
+
+Ekor atas panjang.
+
+Menandakan pressure jual
+atau profit taking.
+
+Semakin panjang ekor atas
+semakin perlu hati-hati.
+"""
+        )
+
