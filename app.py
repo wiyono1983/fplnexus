@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import yfinance as yf
-import os
 import requests
 import matplotlib.pyplot as plt
 from io import BytesIO
@@ -184,83 +182,7 @@ def show_fixtures():
         st.error(
             f"Error: {e}"
         )
-def calculate_rsi(close, period=14):
 
-    delta = close.diff()
-
-    gain = delta.clip(lower=0)
-
-    loss = -delta.clip(upper=0)
-
-    avg_gain = gain.rolling(period).mean()
-
-    avg_loss = loss.rolling(period).mean()
-
-    rs = avg_gain / avg_loss
-
-    return 100 - (100 / (1 + rs))
-def calculate_macd(close):
-
-    ema12 = close.ewm(
-        span=12,
-        adjust=False
-    ).mean()
-
-    ema26 = close.ewm(
-        span=26,
-        adjust=False
-    ).mean()
-
-    macd = ema12 - ema26
-
-    signal = macd.ewm(
-        span=9,
-        adjust=False
-    ).mean()
-
-    histogram = macd - signal
-
-    return (
-        macd,
-        signal,
-        histogram
-    )
-def calculate_obv(df):
-
-    obv = [0]
-
-    for i in range(
-        1,
-        len(df)
-    ):
-
-        if (
-            df["Close"].iloc[i]
-            >
-            df["Close"].iloc[i-1]
-        ):
-
-            obv.append(
-                obv[-1]
-                + df["Volume"].iloc[i]
-            )
-
-        elif (
-            df["Close"].iloc[i]
-            <
-            df["Close"].iloc[i-1]
-        ):
-
-            obv.append(
-                obv[-1]
-                - df["Volume"].iloc[i]
-            )
-
-        else:
-
-            obv.append(obv[-1])
-
-    return obv
 
 # =========================
 # SIDEBAR
@@ -268,50 +190,21 @@ def calculate_obv(df):
 
 menu = st.sidebar.radio(
     "📋 Menu",
-    ["Saham", "FPL"]
+    [
+        "Home",
+        "Fixtures",
+        "My Team",
+        "Best XI",
+        "League Info",
+        "Standings",
+        "Statistics",
+        "Captain Picks",
+        "Rival Analyzer",
+        "Transfer Activity",
+        "Transfer Trends"
+    ]
 )
 
-if menu == "Saham":
-
-    submenu = st.sidebar.radio(
-        "Menu Saham",
-        [
-            "IDX Nexus",
-            "Portfolio Radar",
-            "Analisa Saham",
-            "Breakout Scanner",
-            "Support Resistance",
-            "Avg Down Planner",
-            "Value Screener",
-            "Price Momentum",
-            "Dividend Tracker",
-            "Dividend Momentum",
-            "Right Issue Calc",
-            "MyPorto",
-            "Import Portfolio"
-        ]
-    )
-
-else:
-
-    submenu = st.sidebar.radio(
-        "Menu FPL",
-        [
-            "Home",
-            "Fixtures",
-            "My Team",
-            "Best XI",
-            "League Info",
-            "Standings",
-            "Statistics",
-            "Captain Picks",
-            "Rival Analyzer",
-            "Transfer Activity",
-            "Transfer Trends"
-        ]
-    )
-
-menu = submenu
 
 
 
