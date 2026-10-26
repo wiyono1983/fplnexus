@@ -206,7 +206,7 @@ if menu == "Saham":
             "Dividend Momemtum",
             "Right Issue Calc",
             "MyPorto",
-            "Import Portofolio"
+            "Import Portfolio"
         ]
     )
 
