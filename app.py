@@ -5698,18 +5698,7 @@ elif menu == "Portfolio Radar":
         radar_df,
         use_container_width=True
     )
-analysis_menu = st.selectbox(
-    "Analisa",
-    [
-        "Dashboard",
-        "Support Resistance",
-        "RSI MACD",
-        "OBV",
-        "Volume",
-        "Average Down",
-        "Full Analysis"
-    ]
-)
+
 elif menu == "Breakout Scanner":
 
     st.title(
@@ -5971,3 +5960,331 @@ elif menu == "Avg Down Planner":
         round(new_avg)
     )
 
+elif menu == "Analisa Saham":
+
+    st.title("📈 Analisa Saham")
+
+    if not os.path.exists("portfolio.csv"):
+
+        st.warning("Portfolio belum ada")
+        st.stop()
+
+    portfolio_df = pd.read_csv(
+        "portfolio.csv"
+    )
+
+    ticker = st.selectbox(
+        "Pilih Saham",
+        portfolio_df["Ticker"]
+    )
+
+    hist = yf.Ticker(
+        ticker + ".JK"
+    ).history(
+        period="1y"
+    )
+
+    if hist.empty:
+
+        st.warning(
+            "Data tidak ditemukan"
+        )
+
+        st.stop()
+
+    hist["MA20"] = (
+        hist["Close"]
+        .rolling(20)
+        .mean()
+    )
+
+    hist["MA50"] = (
+        hist["Close"]
+        .rolling(50)
+        .mean()
+    )
+
+    hist["RSI"] = calculate_rsi(
+        hist["Close"]
+    )
+
+    (
+        hist["MACD"],
+        hist["MACD_SIGNAL"],
+        hist["MACD_HIST"]
+    ) = calculate_macd(
+        hist["Close"]
+    )
+
+    hist["OBV"] = calculate_obv(
+        hist
+    )
+
+    close = float(
+        hist["Close"].iloc[-1]
+    )
+
+    ma20 = float(
+        hist["MA20"].iloc[-1]
+    )
+
+    ma50 = float(
+        hist["MA50"].iloc[-1]
+    )
+
+    rsi = float(
+        hist["RSI"].iloc[-1]
+    )
+
+    support = round(
+        hist["Low"]
+        .tail(20)
+        .min()
+    )
+
+    resistance = round(
+        hist["High"]
+        .tail(20)
+        .max()
+    )
+
+    analysis_menu = st.selectbox(
+        "Analisa",
+        [
+            "Dashboard",
+            "Support Resistance",
+            "RSI MACD",
+            "OBV",
+            "Volume",
+            "Average Down",
+            "Full Analysis"
+        ]
+    )
+
+    if analysis_menu == "Dashboard":
+
+        c1,c2,c3,c4 = st.columns(4)
+
+        c1.metric(
+            "Price",
+            round(close)
+        )
+
+        c2.metric(
+            "MA20",
+            round(ma20)
+        )
+
+        c3.metric(
+            "MA50",
+            round(ma50)
+        )
+
+        c4.metric(
+            "RSI",
+            round(rsi,2)
+        )
+
+        st.line_chart(
+            hist[
+                [
+                    "Close",
+                    "MA20",
+                    "MA50"
+                ]
+            ]
+        )
+
+    elif analysis_menu == "Support Resistance":
+
+        st.metric(
+            "Support",
+            support
+        )
+
+        st.metric(
+            "Resistance",
+            resistance
+        )
+
+        st.line_chart(
+            hist["Close"]
+        )
+
+    elif analysis_menu == "RSI MACD":
+
+        c1,c2,c3 = st.columns(3)
+
+        c1.metric(
+            "RSI",
+            round(rsi,2)
+        )
+
+        c2.metric(
+            "MACD",
+            round(
+                hist["MACD"].iloc[-1],
+                2
+            )
+        )
+
+        c3.metric(
+            "Signal",
+            round(
+                hist["MACD_SIGNAL"].iloc[-1],
+                2
+            )
+        )
+
+        st.line_chart(
+            hist[
+                [
+                    "MACD",
+                    "MACD_SIGNAL"
+                ]
+            ]
+        )
+
+    elif analysis_menu == "OBV":
+
+        st.subheader(
+            "On Balance Volume"
+        )
+
+        st.line_chart(
+            hist["OBV"]
+        )
+
+    elif analysis_menu == "Volume":
+
+        st.subheader(
+            "Volume"
+        )
+
+        st.bar_chart(
+            hist["Volume"]
+            .tail(30)
+        )
+
+        avg_vol = (
+            hist["Volume"]
+            .tail(20)
+            .mean()
+        )
+
+        ratio = round(
+            hist["Volume"]
+            .iloc[-1]
+            / avg_vol,
+            2
+        )
+
+        st.metric(
+            "Volume Ratio",
+            f"{ratio}x"
+        )
+
+    elif analysis_menu == "Average Down":
+
+        row = portfolio_df[
+            portfolio_df["Ticker"]
+            == ticker
+        ].iloc[0]
+
+        current_lot = int(
+            row["Lot"]
+        )
+
+        avg_buy = float(
+            row["Avg Buy"]
+        )
+
+        add_lot = st.selectbox(
+            "Tambah Lot",
+            [1,2,5,10,20,50]
+        )
+
+        current_shares = (
+            current_lot
+            * 100
+        )
+
+        add_shares = (
+            add_lot
+            * 100
+        )
+
+        new_avg = (
+            (
+                current_shares
+                * avg_buy
+            )
+            +
+            (
+                add_shares
+                * close
+            )
+        ) / (
+            current_shares
+            + add_shares
+        )
+
+        st.metric(
+            "Current Avg",
+            round(avg_buy)
+        )
+
+        st.metric(
+            "Current Price",
+            round(close)
+        )
+
+        st.metric(
+            "New Avg",
+            round(new_avg)
+        )
+
+    elif analysis_menu == "Full Analysis":
+
+        st.metric(
+            "Price",
+            round(close)
+        )
+
+        st.metric(
+            "Support",
+            support
+        )
+
+        st.metric(
+            "Resistance",
+            resistance
+        )
+
+        st.metric(
+            "RSI",
+            round(rsi,2)
+        )
+
+        st.line_chart(
+            hist[
+                [
+                    "Close",
+                    "MA20",
+                    "MA50"
+                ]
+            ]
+        )
+
+        st.line_chart(
+            hist["OBV"]
+        )
+
+        st.dataframe(
+            hist[
+                [
+                    "Close",
+                    "Volume"
+                ]
+            ].tail(7)
+        )
