@@ -5960,13 +5960,13 @@ elif menu == "Analisa Saham":
 
     elif analysis_menu == "OBV":
 
-    st.subheader(
-        "📊 On Balance Volume (OBV)"
-    )
+        st.subheader(
+             "📊 On Balance Volume (OBV)"
+        )
 
-    st.line_chart(
-        hist["OBV"]
-    )
+        st.line_chart(
+             hist["OBV"]
+        )
 
     obv_now = hist["OBV"].iloc[-1]
     obv_20 = hist["OBV"].iloc[-20]
