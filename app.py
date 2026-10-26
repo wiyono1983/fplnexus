@@ -5957,6 +5957,34 @@ elif menu == "Analisa Saham":
                 ]
             ]
         )
+    elif analysis_menu == "Volume":
+
+        st.subheader(
+            "Volume"
+        )
+
+        st.bar_chart(
+            hist["Volume"]
+            .tail(30)
+        )
+
+        avg_vol = (
+            hist["Volume"]
+            .tail(20)
+            .mean()
+        )
+
+        ratio = round(
+            hist["Volume"]
+            .iloc[-1]
+            / avg_vol,
+            2
+        )
+
+        st.metric(
+            "Volume Ratio",
+            f"{ratio}x"
+        )
 
     elif analysis_menu == "OBV":
 
@@ -6051,34 +6079,6 @@ Trend masih lemah.
 """
     )
 
-    elif analysis_menu == "Volume":
-
-        st.subheader(
-            "Volume"
-        )
-
-        st.bar_chart(
-            hist["Volume"]
-            .tail(30)
-        )
-
-        avg_vol = (
-            hist["Volume"]
-            .tail(20)
-            .mean()
-        )
-
-        ratio = round(
-            hist["Volume"]
-            .iloc[-1]
-            / avg_vol,
-            2
-        )
-
-        st.metric(
-            "Volume Ratio",
-            f"{ratio}x"
-        )
 
     elif analysis_menu == "Average Down":
 
